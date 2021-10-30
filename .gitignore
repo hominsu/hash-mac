@@ -1,0 +1,9 @@
+.vs/
+.idea/
+.vscode/
+cmake-build-*/
+rtf/
+CMakeFiles/
+
+build/
+!build/gen.sh

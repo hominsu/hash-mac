@@ -10,6 +10,7 @@
 namespace des {
 constexpr bool kEncrypt = true;
 constexpr bool kDecrypt = false;
+constexpr size_t kBlockSize = 8;
 
 namespace common {
 /**
@@ -64,7 +65,7 @@ class Des {
    * @details 密钥 8 位，多余丢弃，不足补 0
    * @param _password 8 位密钥
    */
-  void Init(const std::string &_password);
+  virtual void Init(const std::string &_password);
 
   /**
    * @brief 加密, 单次加密 8 个字节

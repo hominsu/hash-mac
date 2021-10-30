@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(DES)
+project(Des)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -31,7 +31,9 @@ endif ()
 
 # ============================== add executable and link libraries ==============================
 file(GLOB ProjectSRC
-        "des/*cc"
+        "crypt/des/*cc"
+        "crypt/*cc"
+        "task/*.cc"
         "*.cc")
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -49,6 +51,7 @@ if (${BUILD_TEST})
     message(STATUS "Building tests")
     enable_testing()
     add_subdirectory(test/des_test)
+    add_subdirectory(test/crypt_test)
 endif ()
 
 add_executable(${PROJECT_NAME} ${ProjectSRC})

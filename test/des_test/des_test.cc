@@ -5,7 +5,7 @@
 #include <iostream>
 #include <memory>
 
-#include "../../des/des.h"
+#include "../../crypt/des/des.h"
 
 int main(int _argc, char *_argv[]) {
   des::Des des;

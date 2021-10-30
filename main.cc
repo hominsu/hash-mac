@@ -3,31 +3,30 @@
 //
 
 #include <iostream>
+#include <list>
+#include <filesystem>
 
-#include "des/des.h"
-
-int main() {
-  des::Des des;
-  des.Init("12345678");
-
-  char cipher_text[8];
-  char plain_text[8];
-
-  des.Encrypt("hello!!!", cipher_text);
-
-  des.Decrypt(cipher_text, plain_text);
-
-  std::cout << "cipher_text: [";
-  for (auto &c: cipher_text) {
-    std::cout << c;
+int main(int _argc, char *_argv[]) {
+  if (_argc != 5) {
+    std::cerr << "para error!" << std::endl;
+    std::cout << "\tEncrypt folder: " << _argv[0] << " -e src_dir dst_dir password" << std::endl;
+    std::cout << "\tDecrypt folder: " << _argv[0] << " -d src_dir dst_dir password" << std::endl;
+    exit(EXIT_FAILURE);
   }
-  std::cout << "]" << std::endl;
 
-  std::cout << "plain_text: [";
-  for (auto &c: plain_text) {
-    std::cout << c;
+  std::string option = _argv[1];    // 加解密选项
+  std::string in_file = _argv[2];   // 输入文件夹
+  std::string out_file = _argv[3];  // 输入文件夹
+  std::string password = _argv[4];  // 密码
+
+  bool is_encrypt;
+  if ("-e" == option) {
+    is_encrypt = true;
+  } else if ("-d" == option) {
+    is_encrypt = false;
   }
-  std::cout << "]" << std::endl;
+
+  std::filesystem::is_regular_file(in_file);
 
   return 0;
 }

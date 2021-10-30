@@ -8,7 +8,7 @@
 #include "../../crypt/crypt.h"
 
 int main(int _argc, char *_argv[]) {
-  Crypt crypt;
+  crypt::Crypt crypt;
   crypt.Init(_argv[1]);
 
   std::string in_str(_argv[2]);

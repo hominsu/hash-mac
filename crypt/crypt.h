@@ -11,6 +11,30 @@ namespace des {
 class Des;
 } // namespace des
 
+namespace crypt {
+namespace utils{
+/**
+ * @brief 获取需要填充的字节数
+ * @param _data_size
+ * @return 需要填充的字节数
+ */
+size_t GetMaxPaddingSize(size_t _data_size);
+} // namespace utils
+
+/**
+ * @brief 封装了标准 DES 算法和 PKCS7 Padding 数据填充算法
+ * @example
+ *      crypt::Crypt crypt;<br/>
+ *      crypt.Init("12345678");   // 初始化密钥<br/>
+ *      <br/>
+ *      std::string in_str("hello!!!");<br/>
+ *      <br/>
+ *      char cipher_text[1024]{'\0'};<br/>
+ *      auto encrypt_size = crypt.Encrypt(in_str.c_str(), in_str.size(), cipher_text, true);<br/>
+ *      <br/>
+ *      char plain_text[1024]{'\0'};<br/>
+ *      auto decrypt_size = crypt.Decrypt(cipher_text, encrypt_size, plain_text, true);<br/>
+ */
 class Crypt {
  private:
   std::shared_ptr<des::Des> des_;
@@ -45,13 +69,7 @@ class Crypt {
    * @return 返回解密后的数据，有可能小雨输入（结尾处）
    */
   size_t Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end = false);
-
-  /**
-   * @brief 获取需要填充的字节数
-   * @param _data_size
-   * @return 需要填充的字节数
-   */
-  static size_t GetMaxPaddingSize(size_t _data_size);
 };
+} // namespace crypt
 
 #endif //DES_CRYPT_CRYPT_H_

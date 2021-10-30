@@ -7,6 +7,22 @@
 #include "crypt.h"
 #include "des/des.h"
 
+namespace crypt {
+namespace utils {
+/**
+ * @brief 获取需要填充的字节数
+ * @param _data_size
+ * @return 需要填充的字节数
+ */
+inline size_t GetMaxPaddingSize(size_t _data_size) {
+  size_t padding_num = des::kBlockSize - _data_size % des::kBlockSize;  // 填充数量，同时也是填充的内容，如果是 8 就填充 8
+  if (0 == padding_num) {
+    padding_num = des::kBlockSize;
+  }
+  return padding_num;
+}
+} // namespace utils
+
 Crypt::Crypt() {
   des_ = std::make_shared<des::Des>();
 }
@@ -38,7 +54,7 @@ size_t Crypt::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
   char in_data[des::kBlockSize]{0};
   char out_data[des::kBlockSize]{0};
 
-  auto padding_num = static_cast<int>(GetMaxPaddingSize(_in_size));// 填充数量，同时也是填充的内容，如果是 8 就填充 8
+  auto padding_num = static_cast<int>(utils::GetMaxPaddingSize(_in_size));// 填充数量，同时也是填充的内容，如果是 8 就填充 8
   auto padding_offset = _in_size % des::kBlockSize; // 填充位置
 
   size_t write_size = 0;  // 加密后的字节数
@@ -125,16 +141,4 @@ size_t Crypt::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
   }
   return write_size;
 }
-
-/**
- * @brief 获取需要填充的字节数
- * @param _data_size
- * @return 需要填充的字节数
- */
-inline size_t Crypt::GetMaxPaddingSize(size_t _data_size) {
-  size_t padding_num = des::kBlockSize - _data_size % des::kBlockSize;  // 填充数量，同时也是填充的内容，如果是 8 就填充 8
-  if (0 == padding_num) {
-    padding_num = des::kBlockSize;
-  }
-  return padding_num;
-}
+} // namespace crypt

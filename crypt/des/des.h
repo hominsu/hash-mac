@@ -53,6 +53,15 @@ inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args) {
 
 /**
  * @brief DES 加密算法
+ * @example
+ *      des::Des des;</br>
+ *      des.Init("12345678");</br>
+ *      </br>
+ *      char cipher_text[8];</br>
+ *      char plain_text[8];</br>
+ *      </br>
+ *      des.Encrypt("hello!!!", cipher_text);</br>
+ *      des.Decrypt(cipher_text, plain_text);</br>
  */
 class Des {
  private:

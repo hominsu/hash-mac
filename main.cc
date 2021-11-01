@@ -15,9 +15,9 @@ int main(int _argc, char *_argv[]) {
   }
 
   std::string option = _argv[1];    // 加解密选项
-  std::string in_file = _argv[2];   // 输入文件夹
-  std::string out_file = _argv[3];  // 输入文件夹
-  std::string password = _argv[4];  // 密码
+  std::string src_dir = _argv[2];   // 输入文件夹
+  std::string dst_dir = _argv[3];   // 输入文件夹
+  std::string password = _argv[4];  // 密钥
 
   bool is_encrypt;
   if ("-e" == option) {
@@ -26,7 +26,33 @@ int main(int _argc, char *_argv[]) {
     is_encrypt = false;
   }
 
-  std::filesystem::is_regular_file(in_file);
+  // 源文件目录是否存在
+  if (!std::filesystem::exists(src_dir)) {
+    std::cerr << "src_dir not exist" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  // 创建输出文件夹
+  if (!std::filesystem::exists(dst_dir)) {
+    std::filesystem::create_directories(dst_dir);
+  }
+
+  // 文件列表
+  auto files_entry = std::list<std::filesystem::directory_entry>();
+
+  // 如果是文件就直接 append 到文件列表
+  if (std::filesystem::is_regular_file(src_dir)) {
+    files_entry.emplace_back(src_dir);
+  } else if (std::filesystem::is_directory(src_dir)) {
+    // 遍历目录中的文件
+    for (auto &iter: std::filesystem::directory_iterator(src_dir)) {
+      // 只处理文件
+      if (!iter.is_regular_file()) {
+        continue;
+      }
+      files_entry.push_back(iter);
+    }
+  }
 
   return 0;
 }

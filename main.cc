@@ -54,5 +54,9 @@ int main(int _argc, char *_argv[]) {
     }
   }
 
+  for (auto &file_it: files_entry) {
+    std::cout << file_it.path().string() << std::endl;
+  }
+
   return 0;
 }

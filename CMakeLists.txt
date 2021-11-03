@@ -54,6 +54,7 @@ if (${BUILD_TEST})
     enable_testing()
     add_subdirectory(ctest/des_test)
     add_subdirectory(ctest/crypt_test)
+    add_subdirectory(ctest/file_test)
 endif ()
 
 add_executable(${PROJECT_NAME} ${ProjectSRC})

@@ -31,7 +31,9 @@ bool FileCrypt::Start(const std::string &_in_file,
   // 只初始化一次
   std::call_once(thread_pool_init_once_flag, [] {
     auto thread_num = XThreadPool::Get()->Init();
+#ifdef Debug
     std::cout << "Thread num = " << thread_num << std::endl;
+#endif
   });
 
   in_file_ = _in_file;

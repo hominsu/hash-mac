@@ -2,9 +2,9 @@
 // Created by Homin Su on 2021/10/28.
 //
 
-#include <cstring>
-
 #include "des.h"
+
+#include <cstring>
 
 // 匿名命名空间, 保存各种 DES 要用到的常量
 namespace {

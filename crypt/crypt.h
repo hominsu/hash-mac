@@ -7,9 +7,7 @@
 
 #include <memory>
 
-namespace des {
-class Des;
-} // namespace des
+#include "des/des.h"
 
 namespace crypt {
 namespace utils{
@@ -18,7 +16,13 @@ namespace utils{
  * @param _data_size
  * @return 需要填充的字节数
  */
-size_t GetMaxPaddingSize(size_t _data_size);
+inline size_t GetMaxPaddingSize(size_t _data_size) {
+  size_t padding_num = des::kBlockSize - _data_size % des::kBlockSize;  // 填充数量，同时也是填充的内容，如果是 8 就填充 8
+  if (0 == padding_num) {
+    padding_num = des::kBlockSize;
+  }
+  return padding_num;
+}
 } // namespace utils
 
 /**

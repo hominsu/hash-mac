@@ -2,13 +2,13 @@
 // Created by Homin Su on 2021/11/2.
 //
 
+#include "data.h"
+
 #ifdef Debug
 #include <iostream>
 #elif Release
 #include <stdexcept>
 #endif
-
-#include "data.h"
 
 Data::Data() = default;
 

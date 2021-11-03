@@ -7,6 +7,10 @@
 
 #include <memory_resource>
 
+/**
+ * @brief 内存块
+ * @details 构造函数私有化，通过 Make 函数可以创建 Data 的智能指针对象
+ */
 class Data {
  private:
   void *data_ = nullptr;

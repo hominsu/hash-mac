@@ -19,6 +19,8 @@ macro(do_test ARG1 ARG2)
             PROPERTIES PASS_REGULAR_EXPRESSION ${ARG2})
 endmacro(do_test)
 
+do_test("111" "apple!!!")
+do_test("222" "hello!!!")
 do_test("12345678" "hello the world")
 do_test("87654321" "hello the world")
 do_test("apple!!!" "000 111 222 333 444")

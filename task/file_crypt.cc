@@ -41,23 +41,23 @@ bool FileCrypt::Start(const std::string &_in_file,
 
   // 读取任务
   read_task_ = std::make_shared<ReadTask>();
+  read_task_->set_memory_resource(_memory_resource);
   if (!read_task_->Init(_in_file)) {
     return false;
   }
-  read_task_->set_memory_resource(_memory_resource);
 
   // 写出任务
   write_task_ = std::make_shared<WriteTask>();
+  write_task_->set_memory_resource(_memory_resource);
   if (!write_task_->Init(_out_file)) {
     return false;
   }
-  write_task_->set_memory_resource(_memory_resource);
 
   // 加解密任务
   crypt_task_ = std::make_shared<CryptTask>();
   crypt_task_->set_memory_resource(_memory_resource);
-  crypt_task_->Init(_password);
   crypt_task_->set_is_encrypt(_is_encrypt);
+  crypt_task_->Init(_password);
 
   // 设置责任链: read_task -> crypt_task -> write_task
   read_task_->set_next(crypt_task_);

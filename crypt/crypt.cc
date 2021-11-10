@@ -5,6 +5,7 @@
 #include "crypt.h"
 
 #include <cstring>
+#include <iostream>
 
 #include "des/des.h"
 
@@ -41,7 +42,7 @@ size_t Crypt::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
   char in_data[des::kBlockSize]{0};
   char out_data[des::kBlockSize]{0};
 
-  auto padding_num = static_cast<int>(utils::GetMaxPaddingSize(_in_size));// 填充数量，同时也是填充的内容，如果是 8 就填充 8
+  auto padding_num = static_cast<int>(des::kBlockSize - _in_size % des::kBlockSize);// 填充数量，同时也是填充的内容，如果是 8 就填充 8
   auto padding_offset = _in_size % des::kBlockSize; // 填充位置
 
   size_t write_size = 0;  // 加密后的字节数
@@ -67,6 +68,7 @@ size_t Crypt::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
       if (padding_num == des::kBlockSize) {
         // 加密原来的数据
         des_->Encrypt(&in_data, &out_data);
+        memcpy(_out_data + write_size, &out_data, des::kBlockSize);
         write_size += des::kBlockSize;
 
         memset(in_data, padding_num, sizeof(in_data));  // 填充 8

@@ -7,3 +7,4 @@ CMakeFiles/
 
 build/
 !build/gen.sh
+test/

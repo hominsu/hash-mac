@@ -31,9 +31,11 @@ endif ()
 
 # ============================== add executable and link libraries ==============================
 file(GLOB ProjectSRC
+        "x_thread_pool/*.cc"
         "crypt/des/*cc"
         "crypt/*cc"
         "task/*.cc"
+        "data/*.cc"
         "*.cc")
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -50,8 +52,9 @@ option(BUILD_TEST "Whether or not to build the test" ON)
 if (${BUILD_TEST})
     message(STATUS "Building tests")
     enable_testing()
-    add_subdirectory(test/des_test)
-    add_subdirectory(test/crypt_test)
+    add_subdirectory(ctest/des_test)
+    add_subdirectory(ctest/crypt_test)
+    add_subdirectory(ctest/file_test)
 endif ()
 
 add_executable(${PROJECT_NAME} ${ProjectSRC})

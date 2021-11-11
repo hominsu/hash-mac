@@ -7,9 +7,7 @@
 
 #include <memory>
 
-namespace des {
-class Des;
-} // namespace des
+#include "des/des.h"
 
 namespace crypt {
 namespace utils{
@@ -18,22 +16,30 @@ namespace utils{
  * @param _data_size
  * @return 需要填充的字节数
  */
-size_t GetMaxPaddingSize(size_t _data_size);
+inline size_t GetMaxPaddingSize(size_t _data_size) {
+  size_t padding_num = des::kBlockSize - _data_size % des::kBlockSize;  // 填充数量，同时也是填充的内容，如果是 8 就填充 8
+  if (0 == padding_num) {
+    padding_num = des::kBlockSize;
+  }
+  return padding_num;
+}
 } // namespace utils
 
 /**
  * @brief 封装了标准 DES 算法和 PKCS7 Padding 数据填充算法
  * @example
- *      crypt::Crypt crypt;<br/>
- *      crypt.Init("12345678");   // 初始化密钥<br/>
- *      <br/>
- *      std::string in_str("hello!!!");<br/>
- *      <br/>
- *      char cipher_text[1024]{'\0'};<br/>
- *      auto encrypt_size = crypt.Encrypt(in_str.c_str(), in_str.size(), cipher_text, true);<br/>
- *      <br/>
- *      char plain_text[1024]{'\0'};<br/>
- *      auto decrypt_size = crypt.Decrypt(cipher_text, encrypt_size, plain_text, true);<br/>
+ * @verbatim
+ *  crypt::Crypt crypt;
+ *  crypt.Init("12345678"); // 初始化密钥
+ *
+ *  std::string in_str("hello!!!");
+ *
+ *  char cipher_text[1024]{'\0'};
+ *  auto encrypt_size = crypt.Encrypt(in_str.c_str(), in_str.size(), cipher_text, true); // 加密
+ *
+ *  char plain_text[1024]{'\0'};
+ *  auto decrypt_size = crypt.Decrypt(cipher_text, encrypt_size, plain_text, true); // 解密
+ * @endverbatim
  */
 class Crypt {
  private:

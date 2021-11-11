@@ -2,9 +2,9 @@
 // Created by Homin Su on 2021/10/28.
 //
 
-#include <cstring>
-
 #include "des.h"
+
+#include <cstring>
 
 // 匿名命名空间, 保存各种 DES 要用到的常量
 namespace {
@@ -272,7 +272,7 @@ void Des::GenSubKey() {
  * @param _text 明文, 64 位 bitset
  * @return 密文, 64 位 bitset
  */
-std::bitset<64> Des::Crypt(const std::bitset<64> &_text, bool _is_encrypt = kEncrypt) {
+std::bitset<64> Des::Crypt(const std::bitset<64> &_text, bool _is_encrypt) {
   auto temp = std::bitset<64>(0x0);
 
   // 初始 IP 置换

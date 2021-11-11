@@ -25,8 +25,10 @@ void CryptTask::Init(const std::string &_password) {
  */
 void CryptTask::Main() {
 #ifdef Debug
-  std::cout << "XCryptTask::Main() Start" << std::endl;
+  std::cout << "CryptTask::Main() Start" << std::endl;
 #endif
+  size_t crypt_bytes = 0;
+
   while (is_running) {
     auto data = PopFront();
     if (nullptr == data) {
@@ -52,6 +54,7 @@ void CryptTask::Main() {
                           data->end());
     }
 
+    crypt_bytes += crypt_data_size;
     out->set_size(crypt_data_size);
     out->set_end(data->end());  // 设置状态
 
@@ -70,10 +73,10 @@ void CryptTask::Main() {
     }
   }
 #ifdef Debug
-  std::cout << std::endl << "XCryptTask::Main() End" << std::endl;;
+  std::cout << std::endl << "XCryptTask::Main() End" << std::endl;
 #endif
 
-  set_return(0);
+  set_return(crypt_bytes);
 }
 
 /**

@@ -42,14 +42,14 @@ bool FileCrypt::Start(const std::string &_in_file,
   // 读取任务
   read_task_ = std::make_shared<ReadTask>();
   read_task_->set_memory_resource(_memory_resource);
-  if (!read_task_->Init(_in_file)) {
+  if (!read_task_->Init(in_file_)) {
     return false;
   }
 
   // 写出任务
   write_task_ = std::make_shared<WriteTask>();
   write_task_->set_memory_resource(_memory_resource);
-  if (!write_task_->Init(_out_file)) {
+  if (!write_task_->Init(out_file_)) {
     return false;
   }
 
@@ -76,12 +76,12 @@ bool FileCrypt::Start(const std::string &_in_file,
  */
 void FileCrypt::Wait() {
   if (nullptr != read_task_) {
-    read_task_->get_return();
+    read_bytes_ = read_task_->get_return();
   }
   if (nullptr != crypt_task_) {
-    crypt_task_->get_return();
+    crypt_bytes_ = crypt_task_->get_return();
   }
   if (nullptr != write_task_) {
-    write_task_->get_return();
+    write_bytes_ = write_task_->get_return();
   }
 }

@@ -110,7 +110,7 @@ int main(int _argc, char *_argv[]) {
       std::chrono::system_clock::now() - start_time_point).count();
 
   printf("\nUsage time: %lld ms\n", usage_times);
-  printf("\tRead bytes: %lf MB\n", convert(read_bytes, Unit::MB));
+  printf("\tRead bytes:  %lf MB\n", convert(read_bytes, Unit::MB));
   printf("\tCrypt bytes: %lf MB\n", convert(crypt_bytes, Unit::MB));
   printf("\tWrite bytes: %lf MB\n", convert(write_bytes, Unit::MB));
 

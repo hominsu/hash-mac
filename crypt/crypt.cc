@@ -11,9 +11,7 @@
 
 namespace crypt {
 
-Crypt::Crypt() {
-  des_ = std::make_shared<des::Des>();
-}
+Crypt::Crypt() = default;
 
 Crypt::~Crypt() = default;
 
@@ -22,7 +20,7 @@ Crypt::~Crypt() = default;
  * @param _password 8 字节密钥
  */
 void Crypt::Init(const std::string &_password) {
-  des_->Init(_password);
+  sub_key_ = des::Init(_password);
 }
 
 /**
@@ -67,7 +65,7 @@ size_t Crypt::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
       // ????????88888888
       if (padding_num == des::kBlockSize) {
         // 加密原来的数据
-        des_->Encrypt(&in_data, &out_data);
+        des::Encrypt(&in_data, &out_data, sub_key_);
         memcpy(_out_data + write_size, &out_data, des::kBlockSize);
         write_size += des::kBlockSize;
 
@@ -78,7 +76,7 @@ size_t Crypt::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
     }
 
     // 加密
-    des_->Encrypt(&in_data, &out_data);
+    des::Encrypt(&in_data, &out_data, sub_key_);
 
     // 加密好的数据拷贝到 _out_data 中
     memcpy(_out_data + write_size, &out_data, des::kBlockSize);
@@ -112,7 +110,7 @@ size_t Crypt::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
     memcpy(in, _in_data + write_size, des::kBlockSize);
 
     // 解密
-    des_->Decrypt(&in, &out);
+    des::Decrypt(&in, &out, sub_key_);
     data_size = des::kBlockSize;
 
     // 处理结尾填充: ??22    ?????55555
@@ -122,6 +120,12 @@ size_t Crypt::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
       // ????????88888888
       if (0 == data_size) { break; }
       else if (data_size < 0) {
+#ifdef Debug
+        std::cerr << "Decrypt failed! padding size error" << std::endl;
+        break;
+#elif Release
+        throw std::runtime_error("Decrypt failed! padding size error");
+#endif
       }
     }
 

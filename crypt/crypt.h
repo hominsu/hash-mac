@@ -10,7 +10,7 @@
 #include "des/des.h"
 
 namespace crypt {
-namespace utils{
+namespace utils {
 /**
  * @brief 获取需要填充的字节数
  * @param _data_size
@@ -43,7 +43,7 @@ inline size_t GetMaxPaddingSize(size_t _data_size) {
  */
 class Crypt {
  private:
-  std::shared_ptr<des::Des> des_;
+  std::array<uint64_t, 16> sub_key_{0};
 
  public:
   Crypt();

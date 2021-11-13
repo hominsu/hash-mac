@@ -8,6 +8,15 @@
 
 // 匿名命名空间, 保存各种 DES 要用到的常量
 namespace {
+constexpr uint32_t k28_MASK = 0x0fffffff;
+constexpr uint64_t k48_MASK = 0x0000ffffffffffff;
+constexpr uint64_t k56_MASK = 0x00ffffffffffffff;
+
+constexpr uint64_t kL28_64_MASK = 0x000000000fffffff;
+constexpr uint64_t kH28_64_MASK = 0x00fffffff0000000;
+constexpr uint64_t kL32_64_MASK = 0x00000000ffffffff;
+constexpr uint64_t kH32_64_MASK = 0xffffffff00000000;
+
 ///< 初始置换 IP
 constexpr unsigned char kIP[] = {58, 50, 42, 34, 26, 18, 10, 2,
                                  60, 52, 44, 36, 28, 20, 12, 4,
@@ -128,19 +137,16 @@ constexpr unsigned char kP[] = {16, 7, 20, 21,
 
 namespace des {
 namespace common {
+
 /**
- * @brief 将 8 个字节转换为一个 64 位 bitset
+ * @brief 将 8 个字节转换为一个 64 位的 uint64_t
  * @param c 字符数组指针
- * @return
+ * @return uint64_t
  */
-std::bitset<64> Bytes2Bits(const char *c) {
-  auto bit_set = std::bitset<64>(0x0);
-  for (unsigned char i = 0; i < 8; ++i) {
-    for (unsigned char j = 0; j < 8; ++j) {
-      (bit_set)[8 * i + j] = ((c[i] >> j) & 0x1);
-    }
-  }
-  return bit_set;
+inline uint64_t CharToByte(const char c[8]) {
+  uint64_t byte;
+  memcpy(&byte, c, 8);
+  return byte;
 }
 
 /**
@@ -149,101 +155,41 @@ std::bitset<64> Bytes2Bits(const char *c) {
  * @param _shift_num 左移位数
  * @return 左移后的密钥
  */
-std::bitset<28> KeyLeftShift(const std::bitset<28> &_k, const unsigned char &_shift_num) {
-  auto tmp = std::bitset<28>(_k);
-
-  for (unsigned char i = 0; i < 28 - _shift_num; ++i) {
-    tmp[i + _shift_num] = _k[i];
-  }
-
-  for (unsigned char i = 0, offset = 28 - _shift_num; i < _shift_num; ++i, ++offset) {
-    tmp[i] = _k[offset];
-  }
-
-  return tmp;
-}
-
-/**
- * @brief 轮函数
- * @param _r 上一轮右 32 位
- * @param _k 48 位子密钥
- * @return 加密后的 32 位数据
- */
-std::bitset<32> RoundFunc(const std::bitset<32> &_r, const std::bitset<48> &_k) {
-  auto expend_e = std::bitset<48>(0x0); // 存储经过 e 表扩展的数据
-
-  // 明文经过扩展置换到 48 位
-  for (unsigned char i = 0; i < 48; ++i) {
-    expend_e[i] = _r[kE[i] - 1];
-  }
-
-  // 扩展的明文与密钥进行异或
-  expend_e = expend_e ^ _k;
-
-  auto tmp = std::bitset<32>(0x0);  // 暂存 S Box 的输出
-
-  // S Box
-  for (unsigned char i = 0, loc = 0; i < 48; i += 6, loc += 4) {
-    // 将经过 e 表扩展的数据通过 S Box 进行压缩置换
-    auto result = std::bitset<4>(
-        kSBox[i / 6][common::ExpendBin2Dec(expend_e, i + 1, i + 0)][common::ExpendBin2Dec(expend_e,
-                                                                                          i + 5,
-                                                                                          i + 4,
-                                                                                          i + 3,
-                                                                                          i + 2)]);
-    tmp[loc] = result[0];
-    tmp[loc + 1] = result[1];
-    tmp[loc + 2] = result[2];
-    tmp[loc + 3] = result[3];
-  }
-
-  auto output = std::bitset<32>(0x0);
-
-  // P 置换
-  for (unsigned char i = 0; i < 32; ++i) {
-    output[i] = tmp[kP[i] - 1];
-  }
-
-  return output;
+uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num) {
+  _k = (_k << _shift_num | _k >> (28 - _shift_num)) & k28_MASK;
+  return _k;
 }
 } // namespace common
 
 /**
- * @brief 初始化密钥
+ * @brief 初始化密钥, 生成 16 个 48 位的子密钥
  * @details DES 加密算法，密钥 8 位，多余丢弃，不足补 0
  * @param _password 8 位密钥
- * @return bool
+ * @return std::array<uint64_t, 16>
  */
-void Des::Init(const std::string &_password) {
-  char key[8]{0};
-  memcpy(key, _password.c_str(), _password.size()); // 密码拷贝到 char 数组中，少的为 0
+std::array<uint64_t, 16> Init(const std::string &_password) {
+  char k[8]{0};
+  memcpy(k, _password.c_str(), _password.size()); // 密码拷贝到 char 数组中，少的为 0
 
-  key_ = common::Bytes2Bits(key);
+  uint64_t key = common::CharToByte(k);
 
-  GenSubKey();
-}
-
-/**
- * @brief 生成 16 个 48 位的子密钥
- */
-void Des::GenSubKey() {
-  auto key_56 = std::bitset<56>(0x0);
+  uint64_t key_56 = 0;
 
   // 压缩置换 1, 64 位压缩到 56 位
-  for (unsigned char i = 0; i < 56; ++i) {
-    key_56[i] = key_[kPC_1[i] - 1];
+  for (unsigned char value: kPC_1) {
+    key_56 <<= 1;
+    key_56 |= key >> (value - 1) & 0x1;
   }
 
-  auto left_key = std::bitset<28>(0x0);
-  auto right_key = std::bitset<28>(0x0);
+  uint32_t left_key;
+  uint32_t right_key;
 
   // 56 位密钥分为左右两边两个 28 位的密钥
-  for (unsigned char i = 0; i < 28; ++i) {
-    left_key[i] = key_56[i + 28];
-    right_key[i] = key_56[i];
-  }
+  left_key = key_56 >> 28;
+  right_key = key_56 & kL28_64_MASK;
 
-  auto key_48 = std::bitset<48>(0x0);
+  uint64_t key_48 = 0;
+  std::array<uint64_t, 16> sub_keys{0};  // 16 轮加解密的子密钥
 
   // 16 轮
   for (unsigned char i = 0; i < 16; ++i) {
@@ -253,102 +199,116 @@ void Des::GenSubKey() {
     right_key = common::KeyLeftShift(right_key, kShiftBits[i]);
 
     // 拼接
-    for (unsigned char j = 0; j < 28; ++j) {
-      key_56[j + 28] = left_key[j];
-      key_56[j] = right_key[j];
-    }
+    key_56 = left_key << 28 | right_key;
 
     // 压缩置换 2, 56 位压缩到 48 位
-    for (unsigned char j = 0; j < 48; ++j) {
-      key_48[j] = key_56[kPC_2[j] - 1];
+    for (unsigned char value: kPC_2) {
+      key_48 <<= 1;
+      key_48 |= key_56 >> (value - 1) & 0x1;
     }
 
-    sub_keys_[i] = key_48;
+    sub_keys[i] = key_48;
   }
+
+  return sub_keys;
 }
 
 /**
- * @brief 加密
- * @param _text 明文, 64 位 bitset
- * @return 密文, 64 位 bitset
+ * @brief 轮函数
+ * @param _r 上一轮右 32 位
+ * @param _k 48 位子密钥
+ * @return 加密后的 32 位数据
  */
-std::bitset<64> Des::Crypt(const std::bitset<64> &_text, bool _is_encrypt) {
-  auto temp = std::bitset<64>(0x0);
+uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k) {
+  uint64_t expend_e = 0;  // 存储经过 e 表扩展的数据
+
+  // 明文经过扩展置换到 48 位
+  for (unsigned char e: kE) {
+    expend_e <<= 1;
+    expend_e |= _r >> (e - 1) & 0x1;
+  }
+
+  // 扩展的明文与密钥进行异或
+  expend_e = expend_e ^ _k;
+
+  uint32_t tmp = 0;  // 暂存 S Box 的输出
+
+  // S Box
+  for (unsigned char i = 0; i < 8; ++i) {
+    // 将经过 e 表扩展的数据通过 S Box 进行压缩置换
+
+    auto row = common::ExpendBin2Dec(expend_e, i + 1, i + 0);
+    auto col = common::ExpendBin2Dec(expend_e, i + 5, i + 4, i + 3, i + 2);
+
+    uint8_t value = kSBox[i][row][col];
+
+    tmp |= value & 0xf;
+  }
+
+  uint32_t output = 0;
+
+  // P 置换
+  for (unsigned char p: kP) {
+    output <<= 1;
+    output |= tmp >> (p - 1) & 0x1;
+  }
+
+  return output;
+}
+
+/**
+ * @brief
+ * @param _in
+ * @param _out
+ * @param _sub_key
+ * @param _is_encrypt
+ */
+void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt) {
+  char src[8]{0};
+  memcpy(static_cast<void *>(src), _in, 8);
+
+  uint64_t plain_text = common::CharToByte(src);
+
+  uint64_t temp = 0;
 
   // 初始 IP 置换
-  for (unsigned char i = 0; i < 64; ++i) {
-    temp[i] = _text[kIP[i] - 1];
+  for (unsigned char value: kIP) {
+    temp <<= 1;
+    temp |= plain_text >> (value - 1) & 0x1;
   }
-
-  auto left = std::bitset<32>(0x0);
-  auto right = std::bitset<32>(0x0);
 
   // 分为左半部分和右半部分
-  for (unsigned char i = 0; i < 32; ++i) {
-    left[i] = temp[i + 32];
-    right[i] = temp[i];
-  }
+  uint32_t left = temp >> 32;
+  uint32_t right = temp & kL32_64_MASK;
 
   // 16 次轮函数
   if (_is_encrypt) {
     // 加密
-    for (auto &sub_key: sub_keys_) {
+    for (auto &sub_key: _sub_key) {
       auto tmp = right;
-      right = left ^ common::RoundFunc(right, sub_key);
+      right = left ^ RoundFunc(right, sub_key);
       left = tmp;
     }
   } else {
     // 解密, 密钥逆用
     for (unsigned char index = 0; index < 16; ++index) {
       auto tmp = right;
-      right = left ^ common::RoundFunc(right, sub_keys_[15 - index]);
+      right = left ^ RoundFunc(right, _sub_key[15 - index]);
       left = tmp;
     }
   }
 
   // 交换左半部分和右半部分, 并合并
-  for (unsigned char i = 0; i < 32; ++i) {
-    temp[i] = left[i];
-    temp[i + 32] = right[i];
-  }
+  temp = (temp | right) << 32 | left;
 
-  auto result = std::bitset<64>(0x0);
+  uint64_t result = 0;
 
   // IP 逆置换
-  for (unsigned char i = 0; i < 64; ++i) {
-    result[i] = temp[kIP_1[i] - 1];
+  for (unsigned char value: kIP_1) {
+    result <<= 1;
+    result |= temp >> (value - 1) & 0x1;
   }
 
-  return result;
-}
-
-/**
- * @brief 加密, 单次加密 8 个字节
- * @param _in 输入数据
- * @param _out 输出数据
- */
-void Des::Encrypt(const void *_in, void *_out) {
-  char src[8]{0};
-  memcpy(static_cast<void *>(src), _in, 8);
-
-  auto plain_text = common::Bytes2Bits(src);
-  auto result = Crypt(plain_text, kEncrypt);
-
-  memcpy(_out, static_cast<void *>(&result), 8);
-}
-
-/**
- * @brief 解密, 单次解密 8 个字节
- * @param _in 输入数据
- * @param _out 输出数据
- */
-void Des::Decrypt(const void *_in, void *_out) {
-  char src[8]{0};
-  memcpy(static_cast<void *>(src), _in, 8);
-
-  auto plain_text = common::Bytes2Bits(src);
-  auto result = Crypt(plain_text, kDecrypt);
-
-  memcpy(_out, static_cast<void *>(&result), 8);
+  memcpy(_out, &result, 8);
 }
 } // namespace des

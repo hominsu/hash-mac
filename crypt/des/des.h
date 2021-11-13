@@ -5,51 +5,11 @@
 #ifndef DES_DES_DES_H_
 #define DES_DES_DES_H_
 
-#include <bitset>
+#include <cstddef>
+#include <cstdint>
 
-namespace des {
-constexpr bool kEncrypt = true;
-constexpr bool kDecrypt = false;
-constexpr size_t kBlockSize = 8;
-
-namespace common {
-/**
- * @brief 将一个字节转换为一个 8 位 bitset
- * @param c 无符号字符
- * @return std::shared_ptr<std::bitset<8>>
- */
-std::bitset<64> Bytes2Bits(const char *c);
-
-/**
- * @brief 将一个 28 位的子密钥左移
- * @param _k 子密钥
- * @param _shift_num 左移位数
- * @return 左移后的密钥
- */
-std::bitset<28> KeyLeftShift(const std::bitset<28> &_k, const unsigned char &_shift_num);
-
-/**
- * @brief 轮函数
- * @param _r 上一轮右 32 位
- * @param _k 48 位子密钥
- * @return 加密后的 32 位数据
- */
-std::bitset<32> RoundFunc(const std::bitset<32> &_r, const std::bitset<48> &_k);
-
-/**
- * @brief 二进制转十进制
- * @tparam Te 经过 e 表扩展的数据数组
- * @tparam Args 要转化的数据索引
- * @param _e 经过 e 表扩展的数据
- * @param args 要转化的数据索引, 由高到地
- * @return 十进制
- */
-template<typename Te, typename ... Args>
-inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args) {
-  unsigned char BCD_8421 = 0;
-  return (0 + ... + (_e[args] * (BCD_8421 > 1 ? BCD_8421 *= 2 : ++BCD_8421)));
-}
-} // namespace common
+#include <array>
+#include <string>
 
 /**
  * @brief DES 加密算法
@@ -63,48 +23,84 @@ inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args) {
  *      des.Encrypt("hello!!!", cipher_text);</br>
  *      des.Decrypt(cipher_text, plain_text);</br>
  */
-class Des {
- private:
-  std::bitset<64> key_{}; ///< 密钥
-  std::bitset<48> sub_keys_[16];  ///< 16 轮加解密的子密钥
+namespace des {
+constexpr size_t kBlockSize = 8;  ///< 块大小
 
- public:
-  /**
-   * @brief 初始化密钥
-   * @details 密钥 8 位，多余丢弃，不足补 0
-   * @param _password 8 位密钥
-   */
-  virtual void Init(const std::string &_password);
+namespace common {
+/**
+ * @brief 将 8 个字节转换为一个 64 位的 uint64_t
+ * @param c 字符数组指针
+ * @return uint64_t
+ */
+uint64_t CharToByte(const char c[8]);
 
-  /**
-   * @brief 加密, 单次加密 8 个字节
-   * @param _in 输入数据
-   * @param _out 输出数据
-   */
-  void Encrypt(const void *_in, void *_out);
+/**
+ * @brief 将一个 28 位的子密钥左移
+ * @param _k 子密钥
+ * @param _shift_num 左移位数
+ * @return 左移后的密钥
+ */
+uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num);
 
-  /**
-   * @brief 解密, 单次解密 8 个字节
-   * @param _in 输入数据
-   * @param _out 输出数据
-   */
-  void Decrypt(const void *_in, void *_out);
+/**
+ * @brief 二进制转十进制
+ * @tparam Te 经过 e 表扩展的数据数组
+ * @tparam Args 要转化的数据索引
+ * @param _e 经过 e 表扩展的数据
+ * @param args 要转化的数据索引, 由高到地
+ * @return 十进制
+ */
+template<typename Te, typename ... Args>
+inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args) {
+  unsigned char BCD_8421 = 0;
+  return (0 + ... + ((_e >> args) & 0x1 * (BCD_8421 > 1 ? BCD_8421 *= 2 : ++BCD_8421)));
+}
+} // namespace common
 
- protected:
-  /**
-    * @brief 加解密
-    * @param _text 明文或密文, 64 位 bitset
-    * @param _is_encrypt 加密还是解密
-    * @return 密文或明文
-    */
-  std::bitset<64> Crypt(const std::bitset<64> &_text, bool _is_encrypt);
+/**
+ * @brief 初始化密钥, 生成 16 个 48 位的子密钥
+ * @details 密钥 8 位，多余丢弃，不足补 0
+ * @param _password std::array<uint64_t, 16>
+ */
+std::array<uint64_t, 16> Init(const std::string &_password);
 
- private:
-  /**
-   * @brief 生成 16 个 48 位的子密钥
-   */
-  void GenSubKey();
-};
+/**
+ * @brief 轮函数
+ * @param _r 上一轮右 32 位
+ * @param _k 48 位子密钥
+ * @return 加密后的 32 位数据
+ */
+uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k);
+
+/**
+ * @brief 加解密, 单次加密 8 个字节
+ * @param _in 输入数据
+ * @param _out 输出数据
+ * @param _sub_key 十六轮子密钥
+ * @param _is_encrypt 加密解密
+ */
+void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt);
+
+/**
+ * @brief 加密, 单次加密 8 个字节
+ * @param _in 输入数据
+ * @param _out 输出数据
+ * @param _sub_key 十六轮子密钥
+ */
+inline void Encrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key) {
+  Crypt(_in, _out, _sub_key, true);
+}
+
+/**
+ * @brief 解密, 单次解密 8 个字节
+ * @param _in 输入数据
+ * @param _out 输出数据
+ * @param _sub_key 十六轮子密钥
+ */
+inline void Decrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key) {
+  Crypt(_in, _out, _sub_key, false);
+}
+
 } // namespace des
 
 #endif //DES_DES_DES_H_

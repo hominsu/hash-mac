@@ -268,16 +268,21 @@ void Des::GenSubKey() {
 }
 
 /**
- * @brief 加密
- * @param _text 明文, 64 位 bitset
- * @return 密文, 64 位 bitset
+ * @brief 加密, 单次加密 8 个字节
+ * @param _in 输入数据
+ * @param _out 输出数据
  */
-std::bitset<64> Des::Crypt(const std::bitset<64> &_text, bool _is_encrypt) {
+void Des::Encrypt(const void *_in, void *_out) {
+  char src[8]{0};
+  memcpy(static_cast<void *>(src), _in, 8);
+
+  auto plain_text = common::Bytes2Bits(src);
+
   auto temp = std::bitset<64>(0x0);
 
   // 初始 IP 置换
   for (unsigned char i = 0; i < 64; ++i) {
-    temp[i] = _text[kIP[i] - 1];
+    temp[i] = plain_text[kIP[i] - 1];
   }
 
   auto left = std::bitset<32>(0x0);
@@ -290,20 +295,11 @@ std::bitset<64> Des::Crypt(const std::bitset<64> &_text, bool _is_encrypt) {
   }
 
   // 16 次轮函数
-  if (_is_encrypt) {
-    // 加密
-    for (auto &sub_key: sub_keys_) {
-      auto tmp = right;
-      right = left ^ common::RoundFunc(right, sub_key);
-      left = tmp;
-    }
-  } else {
-    // 解密, 密钥逆用
-    for (unsigned char index = 0; index < 16; ++index) {
-      auto tmp = right;
-      right = left ^ common::RoundFunc(right, sub_keys_[15 - index]);
-      left = tmp;
-    }
+  // 加密
+  for (auto &sub_key: sub_keys_) {
+    auto tmp = right;
+    right = left ^ common::RoundFunc(right, sub_key);
+    left = tmp;
   }
 
   // 交换左半部分和右半部分, 并合并
@@ -319,21 +315,6 @@ std::bitset<64> Des::Crypt(const std::bitset<64> &_text, bool _is_encrypt) {
     result[i] = temp[kIP_1[i] - 1];
   }
 
-  return result;
-}
-
-/**
- * @brief 加密, 单次加密 8 个字节
- * @param _in 输入数据
- * @param _out 输出数据
- */
-void Des::Encrypt(const void *_in, void *_out) {
-  char src[8]{0};
-  memcpy(static_cast<void *>(src), _in, 8);
-
-  auto plain_text = common::Bytes2Bits(src);
-  auto result = Crypt(plain_text, kEncrypt);
-
   memcpy(_out, static_cast<void *>(&result), 8);
 }
 
@@ -347,7 +328,43 @@ void Des::Decrypt(const void *_in, void *_out) {
   memcpy(static_cast<void *>(src), _in, 8);
 
   auto plain_text = common::Bytes2Bits(src);
-  auto result = Crypt(plain_text, kDecrypt);
+
+  auto temp = std::bitset<64>(0x0);
+
+  // 初始 IP 置换
+  for (unsigned char i = 0; i < 64; ++i) {
+    temp[i] = plain_text[kIP[i] - 1];
+  }
+
+  auto left = std::bitset<32>(0x0);
+  auto right = std::bitset<32>(0x0);
+
+  // 分为左半部分和右半部分
+  for (unsigned char i = 0; i < 32; ++i) {
+    left[i] = temp[i + 32];
+    right[i] = temp[i];
+  }
+
+  // 16 次轮函数
+  // 解密, 密钥逆用
+  for (unsigned char index = 0; index < 16; ++index) {
+    auto tmp = right;
+    right = left ^ common::RoundFunc(right, sub_keys_[15 - index]);
+    left = tmp;
+  }
+
+  // 交换左半部分和右半部分, 并合并
+  for (unsigned char i = 0; i < 32; ++i) {
+    temp[i] = left[i];
+    temp[i + 32] = right[i];
+  }
+
+  auto result = std::bitset<64>(0x0);
+
+  // IP 逆置换
+  for (unsigned char i = 0; i < 64; ++i) {
+    result[i] = temp[kIP_1[i] - 1];
+  }
 
   memcpy(_out, static_cast<void *>(&result), 8);
 }

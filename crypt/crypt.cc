@@ -122,6 +122,12 @@ size_t Crypt::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
       // ????????88888888
       if (0 == data_size) { break; }
       else if (data_size < 0) {
+#ifdef Debug
+        std::cerr << "Decrypt failed! padding size error" << std::endl;
+        break;
+#elif Release
+        throw std::runtime_error("Decrypt failed! padding size error");
+#endif
       }
     }
 

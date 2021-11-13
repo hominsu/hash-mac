@@ -90,15 +90,6 @@ class Des {
    */
   void Decrypt(const void *_in, void *_out);
 
- protected:
-  /**
-    * @brief 加解密
-    * @param _text 明文或密文, 64 位 bitset
-    * @param _is_encrypt 加密还是解密
-    * @return 密文或明文
-    */
-  std::bitset<64> Crypt(const std::bitset<64> &_text, bool _is_encrypt);
-
  private:
   /**
    * @brief 生成 16 个 48 位的子密钥

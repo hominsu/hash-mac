@@ -109,12 +109,12 @@ int main(int _argc, char *_argv[]) {
   auto usage_times = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now() - start_time_point).count();
 
-  printf("Usage time: %lld ms\n", usage_times);
+  printf("\nUsage time: %lld ms\n", usage_times);
   printf("\tRead bytes: %lf MB\n", convert(read_bytes, Unit::MB));
   printf("\tCrypt bytes: %lf MB\n", convert(crypt_bytes, Unit::MB));
   printf("\tWrite bytes: %lf MB\n", convert(write_bytes, Unit::MB));
 
-  auto megabytes_per_second = static_cast<double>(read_bytes) / (static_cast<double>(usage_times) / 100);
+  auto megabytes_per_second = static_cast<double>(read_bytes) / (static_cast<double>(usage_times) / 1000);
 
   printf("\nSpeed: %lf MB/s, %lf mbps/s\n",
          convert(megabytes_per_second, Unit::MB),

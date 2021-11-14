@@ -27,7 +27,7 @@ bool WriteTask::Init(const std::string &_file_name) {
  */
 void WriteTask::Main() {
 #ifdef Debug
-  std::cout << "XCryptTask::Main() Start" << std::endl;
+  std::cout << "WriteTask::Main() Start" << std::endl;
 #endif
 
   size_t write_bytes = 0;
@@ -37,7 +37,7 @@ void WriteTask::Main() {
     return;
   }
 
-  while (is_running) {
+  while (is_running()) {
     auto data = PopFront(); // 弹出一个数据块指针
     if (nullptr == data) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));

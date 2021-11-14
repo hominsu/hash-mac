@@ -18,44 +18,44 @@ constexpr uint64_t kL32_64_MASK = 0x00000000ffffffff;
 constexpr uint64_t kH32_64_MASK = 0xffffffff00000000;
 
 ///< 初始置换 IP
-constexpr unsigned char kIP[] = {58, 50, 42, 34, 26, 18, 10, 2,
-                                 60, 52, 44, 36, 28, 20, 12, 4,
-                                 62, 54, 46, 38, 30, 22, 14, 6,
-                                 64, 56, 48, 40, 32, 24, 16, 8,
-                                 57, 49, 41, 33, 25, 17, 9, 1,
+constexpr unsigned char kIP[] = {57, 49, 41, 33, 25, 17, 9, 1,
                                  59, 51, 43, 35, 27, 19, 11, 3,
                                  61, 53, 45, 37, 29, 21, 13, 5,
-                                 63, 55, 47, 39, 31, 23, 15, 7};
+                                 63, 55, 47, 39, 31, 23, 15, 7,
+                                 56, 48, 40, 32, 24, 16, 8, 0,
+                                 58, 50, 42, 34, 26, 18, 10, 2,
+                                 60, 52, 44, 36, 28, 20, 12, 4,
+                                 62, 54, 46, 38, 30, 22, 14, 6};
 
 ///< IP 逆置换表
-constexpr unsigned char kIP_1[] = {40, 8, 48, 16, 56, 24, 64, 32,
-                                   39, 7, 47, 15, 55, 23, 63, 31,
+constexpr unsigned char kIP_1[] = {39, 7, 47, 15, 55, 23, 63, 31,
                                    38, 6, 46, 14, 54, 22, 62, 30,
                                    37, 5, 45, 13, 53, 21, 61, 29,
                                    36, 4, 44, 12, 52, 20, 60, 28,
                                    35, 3, 43, 11, 51, 19, 59, 27,
                                    34, 2, 42, 10, 50, 18, 58, 26,
-                                   33, 1, 41, 9, 49, 17, 57, 25};
+                                   33, 1, 41, 9, 49, 17, 57, 25,
+                                   32, 0, 40, 8, 48, 16, 56, 24};
 
 ///< 压缩置换 1, 将 64 位密钥压缩为 56 位
-constexpr unsigned char kPC_1[] = {57, 49, 41, 33, 25, 17, 9,
-                                   1, 58, 50, 42, 34, 26, 18,
-                                   10, 2, 59, 51, 43, 35, 27,
-                                   19, 11, 3, 60, 52, 44, 36,
-                                   63, 55, 47, 39, 31, 23, 15,
-                                   7, 62, 54, 46, 38, 30, 22,
-                                   14, 6, 61, 53, 45, 37, 29,
-                                   21, 13, 5, 28, 20, 12, 4};
+constexpr unsigned char kPC_1[] = {56, 48, 40, 32, 24, 16, 8,
+                                   0, 57, 49, 41, 33, 25, 17,
+                                   9, 1, 58, 50, 42, 34, 26,
+                                   18, 10, 2, 59, 51, 43, 35,
+                                   62, 54, 46, 38, 30, 22, 14,
+                                   6, 61, 53, 45, 37, 29, 21,
+                                   13, 5, 60, 52, 44, 36, 28,
+                                   20, 12, 4, 27, 19, 11, 3};
 
 ///< 压缩置换 2, 将 56 位密钥压缩为 48 位
-constexpr unsigned char kPC_2[] = {14, 17, 11, 24, 1, 5,
-                                   3, 28, 15, 6, 21, 10,
-                                   23, 19, 12, 4, 26, 8,
-                                   16, 7, 27, 20, 13, 2,
-                                   41, 52, 31, 37, 47, 55,
-                                   30, 40, 51, 45, 33, 48,
-                                   44, 49, 39, 56, 34, 53,
-                                   46, 42, 50, 36, 29, 32};
+constexpr unsigned char kPC_2[] = {13, 16, 10, 23, 0, 4,
+                                   2, 27, 14, 5, 20, 9,
+                                   22, 18, 11, 3, 25, 7,
+                                   15, 6, 26, 19, 12, 1,
+                                   40, 51, 30, 36, 46, 54,
+                                   29, 39, 50, 44, 32, 47,
+                                   43, 48, 38, 55, 33, 52,
+                                   45, 41, 49, 35, 28, 31};
 
 ///< 密钥每轮左移的位数
 constexpr unsigned char kShiftBits[] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
@@ -63,14 +63,14 @@ constexpr unsigned char kShiftBits[] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2
 // 轮函数相关设定
 
 ///< 扩展置换表，将右 32位数据扩展至 48位
-constexpr unsigned char kE[] = {32, 1, 2, 3, 4, 5,
-                                4, 5, 6, 7, 8, 9,
-                                8, 9, 10, 11, 12, 13,
-                                12, 13, 14, 15, 16, 17,
-                                16, 17, 18, 19, 20, 21,
-                                20, 21, 22, 23, 24, 25,
-                                24, 25, 26, 27, 28, 29,
-                                28, 29, 30, 31, 32, 1};
+constexpr unsigned char kE[] = {31, 0, 1, 2, 3, 4,
+                                3, 4, 5, 6, 7, 8,
+                                7, 8, 9, 10, 11, 12,
+                                11, 12, 13, 14, 15, 16,
+                                15, 16, 17, 18, 19, 20,
+                                19, 20, 21, 22, 23, 24,
+                                23, 24, 25, 26, 27, 28,
+                                27, 28, 29, 30, 31, 0};
 
 ///< SBox 8 张 6 到 4 位的压缩置换表
 constexpr unsigned char kSBox[8][4][16] = {
@@ -125,14 +125,14 @@ constexpr unsigned char kSBox[8][4][16] = {
 };
 
 ///< P置换，32 位到32 位的置换表
-constexpr unsigned char kP[] = {16, 7, 20, 21,
-                                29, 12, 28, 17,
-                                1, 15, 23, 26,
-                                5, 18, 31, 10,
-                                2, 8, 24, 14,
-                                32, 27, 3, 9,
-                                19, 13, 30, 6,
-                                22, 11, 4, 25};
+constexpr unsigned char kP[] = {15, 6, 19, 20,
+                                28, 11, 27, 16,
+                                0, 14, 22, 25,
+                                4, 17, 30, 9,
+                                1, 7, 23, 13,
+                                31, 26, 2, 8,
+                                18, 12, 29, 5,
+                                21, 10, 3, 24};
 } // namespace
 
 namespace des {
@@ -178,14 +178,14 @@ std::array<uint64_t, 16> Init(const std::string &_password) {
   // 压缩置换 1, 64 位压缩到 56 位
   for (unsigned char value: kPC_1) {
     key_56 <<= 1;
-    key_56 |= key >> (value - 1) & 0x1;
+    key_56 |= key >> value & 0x1;
   }
 
   uint32_t left_key;
   uint32_t right_key;
 
   // 56 位密钥分为左右两边两个 28 位的密钥
-  left_key = key_56 >> 28;
+  left_key = key_56 & kH28_64_MASK >> 28;
   right_key = key_56 & kL28_64_MASK;
 
   uint64_t key_48 = 0;
@@ -204,7 +204,7 @@ std::array<uint64_t, 16> Init(const std::string &_password) {
     // 压缩置换 2, 56 位压缩到 48 位
     for (unsigned char value: kPC_2) {
       key_48 <<= 1;
-      key_48 |= key_56 >> (value - 1) & 0x1;
+      key_48 |= key_56 >> value & 0x1;
     }
 
     sub_keys[i] = key_48;
@@ -223,9 +223,9 @@ uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k) {
   uint64_t expend_e = 0;  // 存储经过 e 表扩展的数据
 
   // 明文经过扩展置换到 48 位
-  for (unsigned char e: kE) {
+  for (unsigned char value: kE) {
     expend_e <<= 1;
-    expend_e |= _r >> (e - 1) & 0x1;
+    expend_e |= _r >> value & 0x1;
   }
 
   // 扩展的明文与密钥进行异或
@@ -248,9 +248,9 @@ uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k) {
   uint32_t output = 0;
 
   // P 置换
-  for (unsigned char p: kP) {
+  for (unsigned char value: kP) {
     output <<= 1;
-    output |= tmp >> (p - 1) & 0x1;
+    output |= tmp >> value & 0x1;
   }
 
   return output;
@@ -274,7 +274,7 @@ void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool
   // 初始 IP 置换
   for (unsigned char value: kIP) {
     temp <<= 1;
-    temp |= plain_text >> (value - 1) & 0x1;
+    temp |= plain_text >> value & 0x1;
   }
 
   // 分为左半部分和右半部分
@@ -306,7 +306,7 @@ void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool
   // IP 逆置换
   for (unsigned char value: kIP_1) {
     result <<= 1;
-    result |= temp >> (value - 1) & 0x1;
+    result |= temp >> value & 0x1;
   }
 
   memcpy(_out, &result, 8);

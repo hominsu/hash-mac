@@ -29,7 +29,7 @@ void CryptTask::Main() {
 #endif
   size_t crypt_bytes = 0;
 
-  while (is_running) {
+  while (is_running()) {
     auto data = PopFront();
     if (nullptr == data) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -73,7 +73,7 @@ void CryptTask::Main() {
     }
   }
 #ifdef Debug
-  std::cout << std::endl << "XCryptTask::Main() End" << std::endl;
+  std::cout << std::endl << "CryptTask::Main() End" << std::endl;
 #endif
 
   set_return(crypt_bytes);

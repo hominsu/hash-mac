@@ -3,7 +3,6 @@
 //
 
 #include <iostream>
-#include <memory>
 
 #include "../../crypt/des/des.h"
 

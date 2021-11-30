@@ -17,7 +17,7 @@ constexpr uint64_t kH28_64_MASK = 0x00fffffff0000000;
 constexpr uint64_t kL32_64_MASK = 0x00000000ffffffff;
 constexpr uint64_t kH32_64_MASK = 0xffffffff00000000;
 
-///< 初始置换 IP
+///< Initial Permutation
 constexpr unsigned char kIP[] = {57, 49, 41, 33, 25, 17, 9, 1,
                                  59, 51, 43, 35, 27, 19, 11, 3,
                                  61, 53, 45, 37, 29, 21, 13, 5,
@@ -27,7 +27,7 @@ constexpr unsigned char kIP[] = {57, 49, 41, 33, 25, 17, 9, 1,
                                  60, 52, 44, 36, 28, 20, 12, 4,
                                  62, 54, 46, 38, 30, 22, 14, 6};
 
-///< IP 逆置换表
+///< Inverse Initial Permutation
 constexpr unsigned char kIP_1[] = {39, 7, 47, 15, 55, 23, 63, 31,
                                    38, 6, 46, 14, 54, 22, 62, 30,
                                    37, 5, 45, 13, 53, 21, 61, 29,
@@ -37,7 +37,7 @@ constexpr unsigned char kIP_1[] = {39, 7, 47, 15, 55, 23, 63, 31,
                                    33, 1, 41, 9, 49, 17, 57, 25,
                                    32, 0, 40, 8, 48, 16, 56, 24};
 
-///< 压缩置换 1, 将 64 位密钥压缩为 56 位
+///< Permuted Choice 1, the 64-bit key is compressed to 56 bits
 constexpr unsigned char kPC_1[] = {56, 48, 40, 32, 24, 16, 8,
                                    0, 57, 49, 41, 33, 25, 17,
                                    9, 1, 58, 50, 42, 34, 26,
@@ -47,7 +47,7 @@ constexpr unsigned char kPC_1[] = {56, 48, 40, 32, 24, 16, 8,
                                    13, 5, 60, 52, 44, 36, 28,
                                    20, 12, 4, 27, 19, 11, 3};
 
-///< 压缩置换 2, 将 56 位密钥压缩为 48 位
+///< Permuted Choice 2, the 56-bit key is compressed to 48 bits
 constexpr unsigned char kPC_2[] = {13, 16, 10, 23, 0, 4,
                                    2, 27, 14, 5, 20, 9,
                                    22, 18, 11, 3, 25, 7,
@@ -57,12 +57,12 @@ constexpr unsigned char kPC_2[] = {13, 16, 10, 23, 0, 4,
                                    43, 48, 38, 55, 33, 52,
                                    45, 41, 49, 35, 28, 31};
 
-///< 密钥每轮左移的位数
+///< Number of left circular shift
 constexpr unsigned char kShiftBits[] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 
 // 轮函数相关设定
 
-///< 扩展置换表，将右 32位数据扩展至 48位
+///< Extended Permutation，32-bit data extended to 48 bits
 constexpr unsigned char kE[] = {31, 0, 1, 2, 3, 4,
                                 3, 4, 5, 6, 7, 8,
                                 7, 8, 9, 10, 11, 12,
@@ -72,7 +72,7 @@ constexpr unsigned char kE[] = {31, 0, 1, 2, 3, 4,
                                 23, 24, 25, 26, 27, 28,
                                 27, 28, 29, 30, 31, 0};
 
-///< SBox 8 张 6 到 4 位的压缩置换表
+///< Substitution Boxes, eight S-boxes which map 6 to 4 bits
 constexpr unsigned char kSBox[8][4][16] = {
     {
         {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7},
@@ -124,7 +124,7 @@ constexpr unsigned char kSBox[8][4][16] = {
     }
 };
 
-///< P置换，32 位到32 位的置换表
+///< 32-bit Perm P
 constexpr unsigned char kP[] = {15, 6, 19, 20,
                                 28, 11, 27, 16,
                                 0, 14, 22, 25,
@@ -133,14 +133,23 @@ constexpr unsigned char kP[] = {15, 6, 19, 20,
                                 31, 26, 2, 8,
                                 18, 12, 29, 5,
                                 21, 10, 3, 24};
+
+uint64_t r_expend_e = 0;    ///< Save the data for the E/P table extension
+uint32_t r_tmp_32 = 0;      ///< Save the data for S-boxes output
+uint32_t r_output_32 = 0;   ///< Round function output
+
+uint64_t c_tmp_64 = 0;      ///< Temp value for Crypt function
+uint32_t c_left_32 = 0;     ///< Left 32 bits for Crypt function
+uint32_t c_right_32 = 0;    ///< Right 32 bits for Crypt function
+uint64_t c_text_64 = 0;     ///< Save the plain/cipher text in Crypt function
+
 } // namespace
 
 namespace des {
-namespace common {
 
 /**
- * @brief 将 8 个字节转换为一个 64 位的 uint64_t
- * @param c 字符数组指针
+ * @brief Convert 8 bytes to uint64_t(64 bits)
+ * @param c Char array ptr
  * @return uint64_t
  */
 inline uint64_t CharToByte(const char c[8]) {
@@ -150,28 +159,29 @@ inline uint64_t CharToByte(const char c[8]) {
 }
 
 /**
- * @brief 将一个 28 位的子密钥左移
- * @param _k 子密钥
- * @param _shift_num 左移位数
- * @return 左移后的密钥
+ * @brief Left circular shift a 28 bits sub key
+ * @param _k sub key
+ * @param _shift_num shift digital
+ * @return Left shifted sub key
  */
-uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num) {
-  _k = (_k << _shift_num | _k >> (28 - _shift_num)) & k28_MASK;
-  return _k;
+inline uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num) {
+  // k28_MASK is 0x0fffffff, it overwrites any other data larger than 28 bits
+  return (_k << _shift_num | _k >> (28 - _shift_num)) & k28_MASK;
 }
-} // namespace common
 
 /**
- * @brief 初始化密钥, 生成 16 个 48 位的子密钥
- * @details DES 加密算法，密钥 8 位，多余丢弃，不足补 0
- * @param _password 8 位密钥
- * @return std::array<uint64_t, 16>
+ * @brief Initial Key, Generate 16 48-bit sub-key
+ * @details Initialize key, the key length is 8 bytes, excess is discarded and insufficient is 0
+ * @param _password 8 bytes key
+ * @return std::array<uint64_t, 16> 16 sub-keys
  */
 std::array<uint64_t, 16> Init(const std::string &_password) {
   char k[8]{0};
-  memcpy(k, _password.c_str(), _password.size()); // 密码拷贝到 char 数组中，少的为 0
 
-  uint64_t key = common::CharToByte(k);
+  // excess is discarded and insufficient is 0
+  memcpy(k, _password.c_str(), 8); // 密码拷贝到 char 数组中，少的为 0
+
+  uint64_t key = CharToByte(k);
 
   uint64_t key_56 = 0;
 
@@ -185,7 +195,7 @@ std::array<uint64_t, 16> Init(const std::string &_password) {
   uint32_t right_key;
 
   // 56 位密钥分为左右两边两个 28 位的密钥
-  left_key = key_56 & kH28_64_MASK >> 28;
+  left_key = key_56 >> 28;
   right_key = key_56 & kL28_64_MASK;
 
   uint64_t key_48 = 0;
@@ -195,11 +205,12 @@ std::array<uint64_t, 16> Init(const std::string &_password) {
   for (unsigned char i = 0; i < 16; ++i) {
 
     // 循环左移
-    left_key = common::KeyLeftShift(left_key, kShiftBits[i]);
-    right_key = common::KeyLeftShift(right_key, kShiftBits[i]);
+    left_key = KeyLeftShift(left_key, kShiftBits[i]);
+    right_key = KeyLeftShift(right_key, kShiftBits[i]);
 
     // 拼接
-    key_56 = left_key << 28 | right_key;
+    key_56 = left_key;
+    key_56 = key_56 << 28 | right_key;
 
     // 压缩置换 2, 56 位压缩到 48 位
     for (unsigned char value: kPC_2) {
@@ -220,95 +231,92 @@ std::array<uint64_t, 16> Init(const std::string &_password) {
  * @return 加密后的 32 位数据
  */
 uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k) {
-  uint64_t expend_e = 0;  // 存储经过 e 表扩展的数据
-
   // 明文经过扩展置换到 48 位
   for (unsigned char value: kE) {
-    expend_e <<= 1;
-    expend_e |= _r >> value & 0x1;
+    r_expend_e <<= 1;
+    r_expend_e |= _r >> value & 0x1;
   }
 
   // 扩展的明文与密钥进行异或
-  expend_e = expend_e ^ _k;
+  r_expend_e = r_expend_e ^ _k;
 
-  uint32_t tmp = 0;  // 暂存 S Box 的输出
+  r_tmp_32 = 0;  // 暂存 S Box 的输出
 
   // S Box
   for (unsigned char i = 0; i < 8; ++i) {
     // 将经过 e 表扩展的数据通过 S Box 进行压缩置换
-
-    auto row = common::ExpendBin2Dec(expend_e, i + 1, i + 0);
-    auto col = common::ExpendBin2Dec(expend_e, i + 5, i + 4, i + 3, i + 2);
-
-    uint8_t value = kSBox[i][row][col];
-
-    tmp |= value & 0xf;
+    uint8_t value = kSBox[i][ExpendBin2Dec(r_expend_e, i + 1, i + 0)][ExpendBin2Dec(r_expend_e,
+                                                                                    i + 5,
+                                                                                    i + 4,
+                                                                                    i + 3,
+                                                                                    i + 2)];
+    r_tmp_32 <<= 4;
+    r_tmp_32 |= value & 0xf;
   }
 
-  uint32_t output = 0;
+  r_output_32 = 0;
 
   // P 置换
   for (unsigned char value: kP) {
-    output <<= 1;
-    output |= tmp >> value & 0x1;
+    r_output_32 <<= 1;
+    r_output_32 |= r_tmp_32 >> value & 0x1;
   }
 
-  return output;
+  return r_output_32;
 }
 
 /**
- * @brief
- * @param _in
- * @param _out
- * @param _sub_key
- * @param _is_encrypt
+ * @brief 加解密, 单次加密 8 个字节
+ * @param _in 输入数据
+ * @param _out 输出数据
+ * @param _sub_key 十六轮子密钥
+ * @param _is_encrypt 加密解密
  */
 void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt) {
   char src[8]{0};
   memcpy(static_cast<void *>(src), _in, 8);
 
-  uint64_t plain_text = common::CharToByte(src);
+  c_text_64 = CharToByte(src);
 
-  uint64_t temp = 0;
+  c_tmp_64 = 0;
 
   // 初始 IP 置换
   for (unsigned char value: kIP) {
-    temp <<= 1;
-    temp |= plain_text >> value & 0x1;
+    c_tmp_64 <<= 1;
+    c_tmp_64 |= c_text_64 >> value & 0x1;
   }
 
   // 分为左半部分和右半部分
-  uint32_t left = temp >> 32;
-  uint32_t right = temp & kL32_64_MASK;
+  c_left_32 = c_tmp_64 >> 32;
+  c_right_32 = c_tmp_64 & kL32_64_MASK;
 
   // 16 次轮函数
   if (_is_encrypt) {
     // 加密
     for (auto &sub_key: _sub_key) {
-      auto tmp = right;
-      right = left ^ RoundFunc(right, sub_key);
-      left = tmp;
+      uint32_t tmp = c_right_32;
+      c_right_32 = c_left_32 ^ RoundFunc(c_right_32, sub_key);
+      c_left_32 = tmp;
     }
   } else {
     // 解密, 密钥逆用
     for (unsigned char index = 0; index < 16; ++index) {
-      auto tmp = right;
-      right = left ^ RoundFunc(right, _sub_key[15 - index]);
-      left = tmp;
+      uint32_t tmp = c_right_32;
+      c_right_32 = c_left_32 ^ RoundFunc(c_right_32, _sub_key[15 - index]);
+      c_left_32 = tmp;
     }
   }
 
   // 交换左半部分和右半部分, 并合并
-  temp = (temp | right) << 32 | left;
-
-  uint64_t result = 0;
+  c_tmp_64 = c_right_32;
+  c_tmp_64 = c_tmp_64 << 32 | c_left_32;
 
   // IP 逆置换
   for (unsigned char value: kIP_1) {
-    result <<= 1;
-    result |= temp >> value & 0x1;
+    c_text_64 <<= 1;
+    c_text_64 |= c_tmp_64 >> value & 0x1;
   }
 
-  memcpy(_out, &result, 8);
+  memcpy(_out, &c_text_64, 8);
 }
 } // namespace des

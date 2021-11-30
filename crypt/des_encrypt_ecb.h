@@ -2,8 +2,8 @@
 // Created by Homin Su on 2021/10/30.
 //
 
-#ifndef DES_CRYPT_CRYPT_H_
-#define DES_CRYPT_CRYPT_H_
+#ifndef DES_CRYPT_DES_ENCRYPT_ECB_H_
+#define DES_CRYPT_DES_ENCRYPT_ECB_H_
 
 #include <memory>
 
@@ -41,13 +41,13 @@ inline size_t GetMaxPaddingSize(size_t _data_size) {
  *  auto decrypt_size = crypt.Decrypt(cipher_text, encrypt_size, plain_text, true); // 解密
  * @endverbatim
  */
-class Crypt {
+class DesECB {
  private:
   std::array<uint64_t, 16> sub_key_{0};
 
  public:
-  Crypt();
-  ~Crypt();
+  DesECB();
+  ~DesECB();
 
   /**
    * @brief 初始化密钥
@@ -78,4 +78,4 @@ class Crypt {
 };
 } // namespace crypt
 
-#endif //DES_CRYPT_CRYPT_H_
+#endif //DES_CRYPT_DES_ENCRYPT_ECB_H_

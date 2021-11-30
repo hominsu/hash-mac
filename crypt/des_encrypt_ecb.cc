@@ -2,7 +2,7 @@
 // Created by Homin Su on 2021/10/30.
 //
 
-#include "crypt.h"
+#include "des_encrypt_ecb.h"
 
 #include <cstring>
 #include <iostream>
@@ -11,15 +11,15 @@
 
 namespace crypt {
 
-Crypt::Crypt() = default;
+DesECB::DesECB() = default;
 
-Crypt::~Crypt() = default;
+DesECB::~DesECB() = default;
 
 /**
  * @brief 初始化密钥
  * @param _password 8 字节密钥
  */
-void Crypt::Init(const std::string &_password) {
+void DesECB::Init(const std::string &_password) {
   sub_key_ = des::Init(_password);
 }
 
@@ -32,7 +32,7 @@ void Crypt::Init(const std::string &_password) {
  * @param _is_end 是否加密到结尾
  * @return 返回加密的数据大小，有可能大于输入（结尾处）
  */
-size_t Crypt::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) {
+size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) {
   if (nullptr == _in_data || nullptr == _out_data || _in_size <= 0) {
     return 0;
   }
@@ -95,7 +95,7 @@ size_t Crypt::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bo
  * @param _is_end 是否加密到结尾
  * @return 返回解密后的数据，有可能小雨输入（结尾处）
  */
-size_t Crypt::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) {
+size_t DesECB::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) {
   if (nullptr == _out_data || nullptr == _in_data || _in_size <= 0) {
     return 0;
   }

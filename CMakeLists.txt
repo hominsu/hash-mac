@@ -21,21 +21,9 @@ else ()
 endif ()
 
 
-# ============================== find_package ==============================
-# Threads
-find_package(Threads REQUIRED)
-if (Threads_FOUND)
-    message("")
-endif ()
-
-
 # ============================== add executable and link libraries ==============================
 file(GLOB ProjectSRC
-        "x_thread_pool/*.cc"
-        "crypt/des/*cc"
         "crypt/*cc"
-        "task/*.cc"
-        "data/*.cc"
         "*.cc")
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -52,11 +40,15 @@ option(BUILD_TEST "Whether or not to build the test" ON)
 if (${BUILD_TEST})
     message(STATUS "Building tests")
     enable_testing()
-    add_subdirectory(ctest/acc_test)
     add_subdirectory(ctest/crypt_test)
     add_subdirectory(ctest/des_test)
-    add_subdirectory(ctest/file_test)
 endif ()
 
+# dynamic lib
+ add_library(des_dynamic_lib SHARED crypt/des/des.cc)
+
+# static lib
+add_library(des_static_lib STATIC crypt/des/des.cc)
+
 add_executable(${PROJECT_NAME} ${ProjectSRC})
-target_link_libraries(${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} des_static_lib)

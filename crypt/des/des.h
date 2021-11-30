@@ -2,8 +2,8 @@
 // Created by Homin Su on 2021/10/28.
 //
 
-#ifndef DES_DES_DES_H_
-#define DES_DES_DES_H_
+#ifndef DES_CRYPT_DES_DES_H_
+#define DES_CRYPT_DES_DES_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -14,33 +14,19 @@
 /**
  * @brief DES 加密算法
  * @example
- *      des::Des des;</br>
- *      des.Init("12345678");</br>
- *      </br>
- *      char cipher_text[8];</br>
- *      char plain_text[8];</br>
- *      </br>
- *      des.Encrypt("hello!!!", cipher_text);</br>
- *      des.Decrypt(cipher_text, plain_text);</br>
+ * @verbatim
+ *  auto sub_key = des::Init(_argv[1]);
+ *
+ *  char plain_text[8];
+ *  char cipher_text[8];
+ *  des::Encrypt(plain_text, cipher_text, sub_key);
+ *
+ *  char decrypt_tet[8];
+ *  des::Decrypt(cipher_text, decrypt_tet, sub_key);
+ * @endverbatim
  */
 namespace des {
-constexpr size_t kBlockSize = 8;  ///< 块大小
-
-namespace common {
-/**
- * @brief 将 8 个字节转换为一个 64 位的 uint64_t
- * @param c 字符数组指针
- * @return uint64_t
- */
-uint64_t CharToByte(const char c[8]);
-
-/**
- * @brief 将一个 28 位的子密钥左移
- * @param _k 子密钥
- * @param _shift_num 左移位数
- * @return 左移后的密钥
- */
-uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num);
+constexpr size_t kBlockSize = 8;  // 块大小
 
 /**
  * @brief 二进制转十进制
@@ -55,7 +41,21 @@ inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args) {
   unsigned char BCD_8421 = 0;
   return (0 + ... + ((_e >> args) & 0x1 * (BCD_8421 > 1 ? BCD_8421 *= 2 : ++BCD_8421)));
 }
-} // namespace common
+
+/**
+ * @brief 将 8 个字节转换为一个 64 位的 uint64_t
+ * @param c 字符数组指针
+ * @return uint64_t
+ */
+uint64_t CharToByte(const char c[8]);
+
+/**
+ * @brief 将一个 28 位的子密钥左移
+ * @param _k 子密钥
+ * @param _shift_num 左移位数
+ * @return 左移后的密钥
+ */
+uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num);
 
 /**
  * @brief 初始化密钥, 生成 16 个 48 位的子密钥
@@ -103,4 +103,4 @@ inline void Decrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_
 
 } // namespace des
 
-#endif //DES_DES_DES_H_
+#endif //DES_CRYPT_DES_DES_H_

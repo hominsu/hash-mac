@@ -5,9 +5,9 @@
 #ifndef DES_CRYPT_DES_ENCRYPT_ECB_H_
 #define DES_CRYPT_DES_ENCRYPT_ECB_H_
 
-#include <memory>
-
 #include "des/des.h"
+
+#include <memory>
 
 namespace crypt {
 namespace utils {

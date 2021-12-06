@@ -31,14 +31,14 @@ double convert(Ts _size, Unit _unit) {
 int main(int _argc, char *_argv[]) {
   if (_argc != 5) {
     std::cerr << "param error!" << std::endl;
-    std::cout << "\tEncrypt folder: " << _argv[0] << " -e src_dir dst_dir password" << std::endl;
-    std::cout << "\tDecrypt folder: " << _argv[0] << " -d src_dir dst_dir password" << std::endl;
+    std::cout << "\tEncrypt folder: " << _argv[0] << " -e src dst password" << std::endl;
+    std::cout << "\tDecrypt folder: " << _argv[0] << " -d src dst password" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   std::string option = _argv[1];    // 加解密选项
-  std::string src_dir = _argv[2];   // 输入文件夹
-  std::string dst_dir = _argv[3];   // 输入文件夹
+  std::string src = _argv[2];   // 输入文件夹
+  std::string dst = _argv[3];   // 输入文件夹
   std::string password = _argv[4];  // 密钥
 
   bool is_encrypt;
@@ -49,18 +49,9 @@ int main(int _argc, char *_argv[]) {
   }
 
   // 源文件目录是否存在
-  if (!std::filesystem::exists(src_dir)) {
+  if (!std::filesystem::exists(src)) {
     std::cerr << "src_dir not exist" << std::endl;
     return EXIT_FAILURE;
-  }
-
-  // 创建输出文件夹
-  if (!std::filesystem::exists(dst_dir)) {
-    std::filesystem::create_directories(dst_dir);
-  }
-
-  if (dst_dir[dst_dir.size() - 1] != '/') {
-    dst_dir += '/';
   }
 
   size_t read_bytes;
@@ -73,10 +64,10 @@ int main(int _argc, char *_argv[]) {
   size_t data_bytes;
   auto in_buf = new char[data_size];
   auto out_buf = new char[data_size];
-  bool is_end = false;
+  bool is_end;
 
-  std::ifstream ifs(src_dir, std::ios::binary);
-  std::ofstream ofs(dst_dir, std::ios::binary);
+  std::ifstream ifs(src, std::ios::binary);
+  std::ofstream ofs(dst, std::ios::binary);
 
   // 计算文件长度
   ifs.seekg(0, std::ios::end);
@@ -109,8 +100,13 @@ int main(int _argc, char *_argv[]) {
       is_end = false;
     }
 
-    auto en_size = des_ecb.Encrypt(in_buf, read_bytes, out_buf, is_end);
-    ofs.write(out_buf, en_size);
+    size_t size;
+    if (is_encrypt) {
+      size = des_ecb.Encrypt(in_buf, read_bytes, out_buf, is_end);
+    } else {
+      size = des_ecb.Decrypt(in_buf, read_bytes, out_buf, is_end);
+    }
+    ofs.write(out_buf, size);
   }
 
   ifs.close();
@@ -122,9 +118,9 @@ int main(int _argc, char *_argv[]) {
       std::chrono::system_clock::now() - start_time_point).count();
 
   printf("\nUsage time: %lld ms\n", usage_times);
-  printf("\tRead bytes:  %lf MB\n", convert(read_bytes, Unit::MB));
+  printf("\tRead bytes:  %lf MB\n", convert(total_read_bytes, Unit::MB));
 
-  auto megabytes_per_second = static_cast<double>(read_bytes) / (static_cast<double>(usage_times) / 1000);
+  auto megabytes_per_second = static_cast<double>(total_read_bytes) / (static_cast<double>(usage_times) / 1000);
 
   printf("\nSpeed: %lf MB/s, %lf mbps/s\n",
          convert(megabytes_per_second, Unit::MB),

@@ -73,7 +73,7 @@ uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num);
  * @retval std::array<uint64_t, 16>
  * @call inline uint64_t CharToBits(const char c[8])
  * @call inline uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num)
- * @callby DesECB::Init(const std::string &_password) in des_encrypt_ceb.cc
+ * @callby DesECB::Init(const std::string &_password) in ../des_encrypt_ceb.cc
  */
 std::array<uint64_t, 16> Init(const std::string &_password);
 
@@ -107,7 +107,7 @@ void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool
  * @param _out Output Data
  * @param _sub_key Sixteen Wheels sub-key
  * @call void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
- * @callby size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) in des_encrypt_ceb.cc
+ * @callby size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) in ../des_encrypt_ceb.cc
  */
 inline void Encrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key) {
   Crypt(_in, _out, _sub_key, true);

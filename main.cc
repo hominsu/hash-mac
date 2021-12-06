@@ -2,12 +2,12 @@
 // Created by Homin Su on 2021/10/28.
 //
 
+#include "crypt/des_encrypt_ecb.h"
+
 #include <iostream>
 #include <fstream>
 #include <chrono>
 #include <filesystem>
-
-#include "crypt/des_encrypt_ecb.h"
 
 enum class Unit {
   Byte, KB, MB, GB

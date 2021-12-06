@@ -5,6 +5,18 @@ cmake-build-*/
 rtf/
 CMakeFiles/
 
+test/
+!test/*.cc
+
+out/
+x64/
+
+**/*.sln
+**/*.vcxproj
+**/*.vcxproj.user
+**/*.vcxproj.filters
+**/*.cd
+**/*.png
+
 build/
 !build/gen.sh
-test/

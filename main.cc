@@ -2,12 +2,12 @@
 // Created by Homin Su on 2021/10/28.
 //
 
+#include "crypt/des_encrypt_ecb.h"
+
 #include <iostream>
-#include <list>
+#include <fstream>
 #include <chrono>
 #include <filesystem>
-
-#include "task/file_crypt.h"
 
 enum class Unit {
   Byte, KB, MB, GB
@@ -31,14 +31,14 @@ double convert(Ts _size, Unit _unit) {
 int main(int _argc, char *_argv[]) {
   if (_argc != 5) {
     std::cerr << "param error!" << std::endl;
-    std::cout << "\tEncrypt folder: " << _argv[0] << " -e src_dir dst_dir password" << std::endl;
-    std::cout << "\tDecrypt folder: " << _argv[0] << " -d src_dir dst_dir password" << std::endl;
+    std::cout << "\tEncrypt folder: " << _argv[0] << " -e src dst password" << std::endl;
+    std::cout << "\tDecrypt folder: " << _argv[0] << " -d src dst password" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   std::string option = _argv[1];    // 加解密选项
-  std::string src_dir = _argv[2];   // 输入文件夹
-  std::string dst_dir = _argv[3];   // 输入文件夹
+  std::string src = _argv[2];   // 输入文件夹
+  std::string dst = _argv[3];   // 输入文件夹
   std::string password = _argv[4];  // 密钥
 
   bool is_encrypt;
@@ -49,72 +49,78 @@ int main(int _argc, char *_argv[]) {
   }
 
   // 源文件目录是否存在
-  if (!std::filesystem::exists(src_dir)) {
+  if (!std::filesystem::exists(src)) {
     std::cerr << "src_dir not exist" << std::endl;
     return EXIT_FAILURE;
   }
 
-  // 创建输出文件夹
-  if (!std::filesystem::exists(dst_dir)) {
-    std::filesystem::create_directories(dst_dir);
-  }
-
-  if (dst_dir[dst_dir.size() - 1] != '/') {
-    dst_dir += '/';
-  }
-
-  // 线程安全的内存资源
-  auto memory_resource = std::make_shared<std::pmr::synchronized_pool_resource>();
-
-  // 文件列表
-  auto file_crypt_list = std::list<std::shared_ptr<FileCrypt>>();
-
-  size_t read_bytes = 0;
-  size_t crypt_bytes = 0;
-  size_t write_bytes = 0;
+  size_t read_bytes;
+  size_t total_read_bytes = 0;
 
   // 任务开始执行时间
   auto start_time_point = std::chrono::system_clock::now();
 
-  // 遍历输入目录
-  for (auto &it: std::filesystem::directory_iterator(src_dir)) {
-    // 只处理文件
-    if (!it.is_regular_file()) {
-      continue;
+  const size_t data_size = 1024 * 512;
+  size_t data_bytes;
+  auto in_buf = new char[data_size];
+  auto out_buf = new char[data_size];
+  bool is_end;
+
+  std::ifstream ifs(src, std::ios::binary);
+  std::ofstream ofs(dst, std::ios::binary);
+
+  // 计算文件长度
+  ifs.seekg(0, std::ios::end);
+  data_bytes = ifs.tellg();
+  ifs.seekg(0, std::ios::beg);
+
+
+  crypt::DesECB des_ecb;
+  des_ecb.Init(password);
+
+
+  while (true) {
+    if (ifs.eof()) {
+      break;
     }
 
-    auto file_crypt = std::make_shared<FileCrypt>();
+    // 读取文件
+    ifs.read(in_buf, data_size);
+    read_bytes = ifs.gcount();
 
-    auto ok = file_crypt->Start(it.path().string(),
-                                dst_dir + it.path().filename().string(),
-                                password,
-                                is_encrypt,
-                                memory_resource);
-    if (ok) {
-      file_crypt_list.push_back(file_crypt);
+    if (read_bytes <= 0) {
+      break;
     }
+
+    total_read_bytes += read_bytes;
+
+    if (data_bytes == total_read_bytes) {
+      is_end = true;
+    } else {
+      is_end = false;
+    }
+
+    size_t size;
+    if (is_encrypt) {
+      size = des_ecb.Encrypt(in_buf, read_bytes, out_buf, is_end);
+    } else {
+      size = des_ecb.Decrypt(in_buf, read_bytes, out_buf, is_end);
+    }
+    ofs.write(out_buf, size);
   }
 
-  // 等待任务执行完成
-  size_t task_num = 0;
-  for (auto &file_crypt: file_crypt_list) {
-    file_crypt->Wait();
-    read_bytes += file_crypt->read_bytes_;
-    crypt_bytes += file_crypt->crypt_bytes_;
-    write_bytes += file_crypt->write_bytes_;
-    std::cout << ++task_num << ": in: [" << file_crypt->in_file_ << "], out: [" << file_crypt->out_file_ << "]"
-              << std::endl;
-  }
+  ifs.close();
+  ofs.close();
+  delete[] in_buf;
+  delete[] out_buf;
 
   auto usage_times = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now() - start_time_point).count();
 
   printf("\nUsage time: %lld ms\n", usage_times);
-  printf("\tRead bytes:  %lf MB\n", convert(read_bytes, Unit::MB));
-  printf("\tCrypt bytes: %lf MB\n", convert(crypt_bytes, Unit::MB));
-  printf("\tWrite bytes: %lf MB\n", convert(write_bytes, Unit::MB));
+  printf("\tRead bytes:  %lf MB\n", convert(total_read_bytes, Unit::MB));
 
-  auto megabytes_per_second = static_cast<double>(read_bytes) / (static_cast<double>(usage_times) / 1000);
+  auto megabytes_per_second = static_cast<double>(total_read_bytes) / (static_cast<double>(usage_times) / 1000);
 
   printf("\nSpeed: %lf MB/s, %lf mbps/s\n",
          convert(megabytes_per_second, Unit::MB),

@@ -2,8 +2,8 @@
 // Created by Homin Su on 2021/10/28.
 //
 
-#ifndef DES_DES_DES_H_
-#define DES_DES_DES_H_
+#ifndef DES_CRYPT_DES_DES_H_
+#define DES_CRYPT_DES_DES_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -12,90 +12,114 @@
 #include <string>
 
 /**
- * @brief DES 加密算法
+ * @brief Implementation of Data Encryption Standard
+ * @defgroup des
  * @example
- *      des::Des des;</br>
- *      des.Init("12345678");</br>
- *      </br>
- *      char cipher_text[8];</br>
- *      char plain_text[8];</br>
- *      </br>
- *      des.Encrypt("hello!!!", cipher_text);</br>
- *      des.Decrypt(cipher_text, plain_text);</br>
+ * @verbatim
+ *  auto sub_key = des::Init(_argv[1]);
+ *
+ *  char plain_text[8];
+ *  char cipher_text[8];
+ *  des::Encrypt(plain_text, cipher_text, sub_key);
+ *
+ *  char decrypt_tet[8];
+ *  des::Decrypt(cipher_text, decrypt_tet, sub_key);
+ * @endverbatim
  */
 namespace des {
-constexpr size_t kBlockSize = 8;  ///< 块大小
-
-namespace common {
-/**
- * @brief 将 8 个字节转换为一个 64 位的 uint64_t
- * @param c 字符数组指针
- * @return uint64_t
- */
-uint64_t CharToByte(const char c[8]);
+constexpr size_t kBlockSize = 8;  // 块大小
 
 /**
- * @brief 将一个 28 位的子密钥左移
- * @param _k 子密钥
- * @param _shift_num 左移位数
- * @return 左移后的密钥
- */
-uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num);
-
-/**
- * @brief 二进制转十进制
- * @tparam Te 经过 e 表扩展的数据数组
- * @tparam Args 要转化的数据索引
- * @param _e 经过 e 表扩展的数据
- * @param args 要转化的数据索引, 由高到地
- * @return 十进制
+ * @brief Unsigned Binary to Decimal
+ * @tparam Te Array of data expanded by extended permutation
+ * @tparam Args Index of the data to be transformed
+ * @param _e Data extended by extended permutation
+ * @param args Index of the data to be transformed, from high to low
+ * @return Decimal
+ * @retval unsigned char
+ * @callby uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k)
  */
 template<typename Te, typename ... Args>
 inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args) {
   unsigned char BCD_8421 = 0;
   return (0 + ... + ((_e >> args) & 0x1 * (BCD_8421 > 1 ? BCD_8421 *= 2 : ++BCD_8421)));
 }
-} // namespace common
 
 /**
- * @brief 初始化密钥, 生成 16 个 48 位的子密钥
- * @details 密钥 8 位，多余丢弃，不足补 0
- * @param _password std::array<uint64_t, 16>
+ * @brief Convert 8 bytes to uint64_t(64 bits)
+ * @param c Char array ptr
+ * @return 64 bits data
+ * @retval uint64_t
+ * @callby std::array<uint64_t, 16> Init(const std::string &_password)
+ * @callby void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
+ */
+uint64_t CharToBits(const char c[8]);
+
+/**
+ * @brief Left circular shift a 28 bits sub key
+ * @param _k sub key
+ * @param _shift_num shift digital
+ * @return Left shifted sub key
+ * @retval uint32_t
+ * @callby std::array<uint64_t, 16> Init(const std::string &_password)
+ */
+uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num);
+
+/**
+ * @brief Initial Key, Generate 16 48-bit sub-key
+ * @details Initialize key, the key length is 8 bytes, excess is discarded and insufficient is 0
+ * @param _password 8 bytes key
+ * @return 16 wheels sub-keys
+ * @retval std::array<uint64_t, 16>
+ * @call inline uint64_t CharToBits(const char c[8])
+ * @call inline uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num)
+ * @callby DesECB::Init(const std::string &_password) in ../des_encrypt_ceb.cc
  */
 std::array<uint64_t, 16> Init(const std::string &_password);
 
 /**
- * @brief 轮函数
- * @param _r 上一轮右 32 位
+ * @brief round function
+ * @param _r Previous round function right 32 bits
  * @param _k 48 位子密钥
- * @return 加密后的 32 位数据
+ * @return Encrypted 32-bit data
+ * @retval uint32_t
+ * @call template<typename Te, typename ... Args> inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args)
+ * @callby void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
  */
 uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k);
 
 /**
- * @brief 加解密, 单次加密 8 个字节
- * @param _in 输入数据
- * @param _out 输出数据
- * @param _sub_key 十六轮子密钥
- * @param _is_encrypt 加密解密
+ * @brief Encryption and decryption, single encryption and decryption of 8 bytes
+ * @param _in Input Data
+ * @param _out Output Data
+ * @param _sub_key Sixteen Wheels sub-key
+ * @param _is_encrypt Encryption/Decryption
+ * @call inline uint64_t CharToBits(const char c[8])
+ * @call uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k)
+ * @callby inline void Encrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key)
+ * @callby inline void Decrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key)
  */
 void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt);
 
 /**
- * @brief 加密, 单次加密 8 个字节
- * @param _in 输入数据
- * @param _out 输出数据
- * @param _sub_key 十六轮子密钥
+ * @brief Encryption, single encryption of 8 bytes
+ * @param _in Input Data
+ * @param _out Output Data
+ * @param _sub_key Sixteen Wheels sub-key
+ * @call void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
+ * @callby size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) in ../des_encrypt_ceb.cc
  */
 inline void Encrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key) {
   Crypt(_in, _out, _sub_key, true);
 }
 
 /**
- * @brief 解密, 单次解密 8 个字节
- * @param _in 输入数据
- * @param _out 输出数据
- * @param _sub_key 十六轮子密钥
+ * @brief Decryption, single decryption of 8 bytes
+ * @param _in Input Data
+ * @param _out Output Data
+ * @param _sub_key Sixteen Wheels sub-key
+ * @call void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
+ * @callby size_t DesECB::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end)
  */
 inline void Decrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key) {
   Crypt(_in, _out, _sub_key, false);
@@ -103,4 +127,4 @@ inline void Decrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_
 
 } // namespace des
 
-#endif //DES_DES_DES_H_
+#endif //DES_CRYPT_DES_DES_H_

@@ -5,10 +5,10 @@
 #include <iostream>
 #include <memory>
 
-#include "../../crypt/crypt.h"
+#include "../../crypt/des_encrypt_ecb.h"
 
 int main(int _argc, char *_argv[]) {
-  crypt::Crypt crypt;
+  crypt::DesECB crypt;
   crypt.Init(_argv[1]);
 
   std::string in_str(_argv[2]);

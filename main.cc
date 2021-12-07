@@ -41,7 +41,7 @@ int main(int _argc, char *_argv[]) {
   std::string dst = _argv[3];   // 输入文件夹
   std::string password = _argv[4];  // 密钥
 
-  bool is_encrypt;
+  bool is_encrypt{};
   if ("-e" == option) {
     is_encrypt = true;
   } else if ("-d" == option) {

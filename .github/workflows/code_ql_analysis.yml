@@ -8,11 +8,7 @@ on:
 
 jobs:
   CodeQL-Build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ windows-latest, ubuntu-latest, macos-latest ]
-
+    runs-on: ubuntu-latest
     permissions:
       # required for all workflows
       security-events: write

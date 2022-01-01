@@ -2,27 +2,43 @@
 // Created by Homin Su on 2021/10/30.
 //
 
-#include "des_encrypt_ecb.h"
+#include "des_encrypt_cbc.h"
 
 #include <cstring>
 #include <iostream>
 
-#include "des/des.h"
-
 namespace crypt {
 
-DesECB::DesECB() = default;
+DesCBC::DesCBC() = default;
 
-DesECB::~DesECB() = default;
+DesCBC::~DesCBC() = default;
+
+/**
+ * @brief _dst ^ _src
+ * @param _dst
+ * @param _src
+ * @param _size
+ */
+void DesCBC::mem_xor(void *_dst, void *_src, ::std::size_t _size) {
+  auto *sp = static_cast<uint8_t *>(_src);
+  auto *bp = static_cast<uint8_t *>(_dst);
+  auto *ep = static_cast<uint8_t *>(_dst) + _size;
+
+  while (bp != ep) {
+    uint8_t tmp = *sp ^ *bp;
+    *bp = tmp, ++sp, ++bp;
+  }
+}
 
 /**
  * @brief Initialize the key
  * @param _password 8-byte key
- * @call call std::array<uint64_t, 16> Init(const std::string &_password) in des/des.cc
+ * @call call ::std::array<uint64_t, 16> Init(const ::std::string &_password) in des/des.cc
  * @callby main.cc
  */
-void DesECB::Init(const std::string &_password) {
+void DesCBC::Init(const ::std::string &_password, void *_iv) {
   sub_key_ = des::Init(_password);
+  memcpy(&iv_, _iv, des::kBlockSize);
 }
 
 /**
@@ -33,11 +49,11 @@ void DesECB::Init(const std::string &_password) {
  * @param _out_data Output data
  * @param _is_end Is end data block?
  * @return Return the size of the encrypted data, possibly greater than the input data(the end data block)
- * @retval size_t
- * @call inline void Encrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key) in des/des.h
+ * @retval ::std::size_t
+ * @call inline void Encrypt(const void *_in, void *_out, ::std::array<uint64_t, 16> &_sub_key) in des/des.h
  * @callby main.cc
  */
-size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) {
+::std::size_t DesCBC::Encrypt(const char *_in_data, ::std::size_t _in_size, char *_out_data, bool _is_end) {
   if (nullptr == _in_data || nullptr == _out_data || _in_size <= 0) {
     return 0;
   }
@@ -49,11 +65,11 @@ size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, b
       - _in_size % des::kBlockSize);  // The size of fills, and also the content of the fill, if it is 8 then fill 8
   auto padding_offset = _in_size % des::kBlockSize; // Filling position
 
-  size_t write_size = 0;  // Number of bytes after encryption
+  ::std::size_t write_size = 0;  // Number of bytes after encryption
 
-  size_t data_size; // Data size per encryption
+  ::std::size_t data_size; // Data size per encryption
 
-  for (size_t i = 0; i < _in_size; i += des::kBlockSize) {
+  for (::std::size_t i = 0; i < _in_size; i += des::kBlockSize) {
 
     // Handling cases where the number of bytes at the end is less than 8
     if (_in_size - i < des::kBlockSize) {
@@ -71,8 +87,11 @@ size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, b
       // ????????88888888
       if (padding_num == des::kBlockSize) {
         // Encrypt the original data
-        des::Encrypt(&in_buf, &out_buf, sub_key_);
-        memcpy(_out_data + write_size, &out_buf, des::kBlockSize);
+        mem_xor(in_buf, &iv_, des::kBlockSize);
+        des::Encrypt(in_buf, out_buf, sub_key_);
+        memcpy(&iv_, out_buf, des::kBlockSize);
+
+        memcpy(_out_data + write_size, out_buf, des::kBlockSize);
         write_size += des::kBlockSize;
 
         memset(in_buf, padding_num, sizeof(in_buf));  // Filling 8
@@ -82,10 +101,12 @@ size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, b
     }
 
     // Encrypt
-    des::Encrypt(&in_buf, &out_buf, sub_key_);
+    mem_xor(in_buf, &iv_, des::kBlockSize);
+    des::Encrypt(in_buf, out_buf, sub_key_);
+    memcpy(&iv_, out_buf, des::kBlockSize);
 
     // Copy the encrypted data to _out_data
-    memcpy(_out_data + write_size, &out_buf, des::kBlockSize);
+    memcpy(_out_data + write_size, out_buf, des::kBlockSize);
 
     write_size += des::kBlockSize;
   }
@@ -100,26 +121,29 @@ size_t DesECB::Encrypt(const char *_in_data, size_t _in_size, char *_out_data, b
  * @param _out_data Output data
  * @param _is_end Is end data block?
  * @return Return the size of the decrypted data, possibly less than the input data(the end data block)
- * @retval size_t
- * @call inline void Decrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key) in des/des.h
+ * @retval ::std::size_t
+ * @call inline void Decrypt(const void *_in, void *_out, ::std::array<uint64_t, 16> &_sub_key) in des/des.h
  * @callby main.cc
  */
-size_t DesECB::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, bool _is_end) {
+::std::size_t DesCBC::Decrypt(const char *_in_data, ::std::size_t _in_size, char *_out_data, bool _is_end) {
   if (nullptr == _out_data || nullptr == _in_data || _in_size <= 0) {
     return 0;
   }
-  size_t write_size = 0;  /// Number of bytes after decryption
+  ::std::size_t write_size = 0;  /// Number of bytes after decryption
 
   char in_buf[8]{0};
   char out_buf[8]{0};
-  size_t data_size; // Data size per encryption
+  ::std::size_t data_size; // Data size per encryption
 
-  for (size_t i = 0; i < _in_size; i += des::kBlockSize) {
+  for (::std::size_t i = 0; i < _in_size; i += des::kBlockSize) {
     // Copy input data to in buffer
     memcpy(in_buf, _in_data + write_size, des::kBlockSize);
 
     // Decrypt
-    des::Decrypt(&in_buf, &out_buf, sub_key_);
+    des::Decrypt(in_buf, out_buf, sub_key_);
+    mem_xor(out_buf, &iv_, des::kBlockSize);
+    memcpy(&iv_, in_buf, des::kBlockSize);
+
     data_size = des::kBlockSize;
 
     // Handling end padding: ??22    ?????55555
@@ -130,15 +154,16 @@ size_t DesECB::Decrypt(const char *_in_data, size_t _in_size, char *_out_data, b
       if (0 == data_size) { break; }
       else if (data_size < 0) {
 #ifdef Debug
-        std::cerr << "Decrypt failed! padding size error" << std::endl;
+        ::std::cerr << "Decrypt failed! padding size error" << ::std::endl;
         break;
 #elif Release
-        throw std::runtime_error("Decrypt failed! padding size error");
+        throw ::std::runtime_error("Decrypt failed! padding size error");
 #endif
       }
     }
 
-    memcpy(_out_data + write_size, &out_buf, data_size);
+    memcpy(_out_data + write_size, out_buf, data_size);
+
     write_size += data_size;
   }
   return write_size;

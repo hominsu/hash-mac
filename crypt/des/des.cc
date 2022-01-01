@@ -153,8 +153,8 @@ namespace des {
  * @param c Char array ptr
  * @return 64 bits data
  * @retval uint64_t
- * @callby std::array<uint64_t, 16> Init(const std::string &_password)
- * @callby void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
+ * @callby ::std::array<uint64_t, 16> Init(const ::std::string &_password)
+ * @callby void Crypt(const void *_in, void *_out, ::std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
  */
 inline uint64_t CharToBits(const char c[8]) {
   uint64_t byte;
@@ -169,7 +169,7 @@ inline uint64_t CharToBits(const char c[8]) {
  * @param _shift_num shift digital
  * @return Left shifted sub key
  * @retval uint32_t
- * @callby std::array<uint64_t, 16> Init(const std::string &_password)
+ * @callby ::std::array<uint64_t, 16> Init(const ::std::string &_password)
  */
 inline uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num) {
   // k28_MASK is 0x0fffffff, it overwrites any other data larger than 28 bits
@@ -181,12 +181,12 @@ inline uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num) {
  * @details Initialize key, the key length is 8 bytes, excess is discarded and insufficient is 0
  * @param _password 8 bytes key
  * @return 16 wheels sub-keys
- * @retval std::array<uint64_t, 16>
+ * @retval ::std::array<uint64_t, 16>
  * @call inline uint64_t CharToBits(const char c[8])
  * @call inline uint32_t KeyLeftShift(uint32_t &_k, const unsigned char &_shift_num)
- * @callby DesECB::Init(const std::string &_password) in ../des_encrypt_ceb.cc
+ * @callby DesCBC::Init(const ::std::string &_password) in ../des_encrypt_cbc.cc
  */
-std::array<uint64_t, 16> Init(const std::string &_password) {
+::std::array<uint64_t, 16> Init(const ::std::string &_password) {
   char k[8]{0};
 
   // excess is discarded and insufficient is 0
@@ -210,7 +210,7 @@ std::array<uint64_t, 16> Init(const std::string &_password) {
   right_key = key_56 & kL28_64_MASK;
 
   uint64_t key_48 = 0;
-  std::array<uint64_t, 16> sub_keys{0};  // sub-keys for 16 rounds of encryption and decryption
+  ::std::array<uint64_t, 16> sub_keys{0};  // sub-keys for 16 rounds of encryption and decryption
 
   // 16 rounds
   for (unsigned char i = 0; i < 16; ++i) {
@@ -243,7 +243,7 @@ std::array<uint64_t, 16> Init(const std::string &_password) {
  * @return Encrypted 32-bit data
  * @retval uint32_t
  * @call template<typename Te, typename ... Args> inline unsigned char ExpendBin2Dec(Te &&_e, Args ... args)
- * @callby void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
+ * @callby void Crypt(const void *_in, void *_out, ::std::array<uint64_t, 16> &_sub_key, bool _is_encrypt)
  */
 uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k) {
   // extended permutation，32-bit data extended to 48 bits
@@ -289,10 +289,10 @@ uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k) {
  * @param _is_encrypt Encryption/Decryption
  * @call inline uint64_t CharToBits(const char c[8])
  * @call uint32_t RoundFunc(const uint32_t &_r, const uint64_t &_k)
- * @callby inline void Encrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key)
- * @callby inline void Decrypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key)
+ * @callby inline void Encrypt(const void *_in, void *_out, ::std::array<uint64_t, 16> &_sub_key)
+ * @callby inline void Decrypt(const void *_in, void *_out, ::std::array<uint64_t, 16> &_sub_key)
  */
-void Crypt(const void *_in, void *_out, std::array<uint64_t, 16> &_sub_key, bool _is_encrypt) {
+void Crypt(const void *_in, void *_out, ::std::array<uint64_t, 16> &_sub_key, bool _is_encrypt) {
   char src[8]{0};
   memcpy(static_cast<void *>(src), _in, 8);
 

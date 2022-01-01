@@ -2,9 +2,9 @@
 // Created by Homin Su on 2021/10/28.
 //
 
-#include <iostream>
-
 #include "../../crypt/des/des.h"
+
+#include <iostream>
 
 int main(int _argc, char *_argv[]) {
   auto sub_key = des::Init(_argv[1]);
@@ -16,11 +16,11 @@ int main(int _argc, char *_argv[]) {
 
   des::Decrypt(cipher_text, plain_text, sub_key);
 
-  std::cout << "plain_text: [";
+  ::std::cout << "plain_text: [";
   for (auto &c: plain_text) {
-    std::cout << c;
+    ::std::cout << c;
   }
-  std::cout << "]" << std::endl;
+  ::std::cout << "]" << ::std::endl;
 
   return 0;
 }

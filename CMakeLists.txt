@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(Des)
+project(hash-mac)
 
 set(CMAKE_CXX_STANDARD 17)
 
